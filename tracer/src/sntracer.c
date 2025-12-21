@@ -227,6 +227,8 @@ process_one_event_in_each_buffer:
         event.type = header->type;
         event.timestamp = header->timestamp;
         thread_buffer->read_offset += PTR_BYTE_DIFF(header + 1, ptr);
+        if (thread_buffer->read_offset >= thread_buffer->buffer_size)
+            thread_buffer->read_offset = 0;
 
         sn_tracer_unlock_thread(tracer, thread_buffer);
 
@@ -246,22 +248,28 @@ process_one_event_in_each_buffer:
 
                 switch (header->type) {
                     case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
-                        if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerScopeBeginPayLoad))
+                        if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerScopeBeginPayLoad)) {
                             thread_buffer->read_offset = 0;
+                            ptr = ring_buffer + thread_buffer->read_offset;
+                        }
                         payload_ptr.scope_begin = GET_ALIGNED_PTR(ptr, snTracerScopeBeginPayLoad);
                         event.scope_begin = *payload_ptr.scope_begin;
                         end_ptr = (void *)(payload_ptr.scope_begin + 1);
                         break;
                     case SN_TRACER_EVENT_TYPE_INSTANT:
-                        if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerInstantPayLoad))
+                        if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerInstantPayLoad)) {
                             thread_buffer->read_offset = 0;
+                            ptr = ring_buffer + thread_buffer->read_offset;
+                        }
                         payload_ptr.instant = GET_ALIGNED_PTR(ptr, snTracerInstantPayLoad);
                         event.instant = *payload_ptr.instant;
                         end_ptr = (void *)(payload_ptr.instant + 1);
                         break;
                     case SN_TRACER_EVENT_TYPE_COUNTER:
-                        if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerCounterPayLoad))
+                        if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerCounterPayLoad)) {
                             thread_buffer->read_offset = 0;
+                            ptr = ring_buffer + thread_buffer->read_offset;
+                        }
                         payload_ptr.counter = GET_ALIGNED_PTR(ptr, snTracerCounterPayLoad);
                         event.counter = *payload_ptr.counter;
                         end_ptr = (void *)(payload_ptr.counter + 1);
@@ -277,6 +285,8 @@ process_one_event_in_each_buffer:
                 }
 
                 thread_buffer->read_offset += PTR_BYTE_DIFF(end_ptr, ptr);
+                if (thread_buffer->read_offset >= thread_buffer->buffer_size)
+                    thread_buffer->read_offset = 0;
                 sn_tracer_unlock_thread(tracer, thread_buffer);
                 break;
 

@@ -108,13 +108,17 @@ int main(void) {
 
     sn_tracer_enable(&tracer);
 
-    SN_TRACER_TRACE_COUNTER(&tracer, thread_buffer, "test counter", 5);
-    SN_TRACER_TRACE_SCOPE(&tracer, thread_buffer, "test scope") {
-        printf("Inside the test scope\n");
-        SN_TRACER_TRACE_INSTANT(&tracer, thread_buffer, "test instant");
-        printf("wasting a bit of time\n");
-        time_sleep(1);
-        printf("done wasting time!\n");
+    for (int i = 0; i < 100; ++i) {
+        SN_TRACER_TRACE_COUNTER(&tracer, thread_buffer, "loop counter", i);
+        SN_TRACER_TRACE_SCOPE(&tracer, thread_buffer, "test scope") {
+            printf("Inside the test scope\n");
+            SN_TRACER_TRACE_INSTANT(&tracer, thread_buffer, "test instant");
+            printf("wasting a bit of time\n");
+            time_sleep(1);
+            printf("done wasting time!\n");
+            sn_tracer_process(&tracer);
+        }
+
     }
 
     SN_TRACER_TRACE_COUNTER(&tracer, thread_buffer, "test counter", 10);
