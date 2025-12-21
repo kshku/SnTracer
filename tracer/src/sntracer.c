@@ -1,12 +1,12 @@
 #include "sntracer/sntracer.h"
 
 #define sn_tracer_lock_thread(tracer, thread_buffer) \
-    if ((tracer)->hooks.lock) \
-        (tracer)->hooks.lock((thread_buffer)->thread_lock)
+    if ((tracer)->hooks.mutex_lock) \
+        (tracer)->hooks.mutex_lock((thread_buffer)->thread_lock)
 
 #define sn_tracer_unlock_thread(tracer, thread_buffer) \
-    if ((tracer)->hooks.unlock) \
-        (tracer)->hooks.unlock((thread_buffer)->thread_lock)
+    if ((tracer)->hooks.mutex_unlock) \
+        (tracer)->hooks.mutex_unlock((thread_buffer)->thread_lock)
 
 #define sn_tracer_get_thread_buffer(tracer, write_thread_buffer) do { \
         if ((tracer)->hooks.read_lock) \

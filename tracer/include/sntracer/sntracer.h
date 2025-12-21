@@ -72,8 +72,8 @@ typedef struct snTracerHooks {
     void *thread_data;
 
     // Used for per thread lock
-    snMutexLockFn lock;
-    snMutexUnlockFn unlock;
+    snMutexLockFn mutex_lock;
+    snMutexUnlockFn mutex_unlock;
 
     // Used for global lock
     snReadLockFn read_lock;

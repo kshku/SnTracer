@@ -1,12 +1,11 @@
-#ifndef SN_OS_WINDOWS
-
 #define _GNU_SOURCE
 #define SN_TRACER_ENABLE
 #include <sntracer/sntracer.h>
 
+#ifndef SN_OS_WINDOWS
+
 #include <stdio.h>
 #include <time.h>
-
 
 #include <pthread.h>
 
