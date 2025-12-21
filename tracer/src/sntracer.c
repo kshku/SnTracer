@@ -188,41 +188,46 @@ size_t sn_tracer_process(snTracer *tracer) {
     return sn_tracer_process_n(tracer, -1);
 }
 
+size_t sn_tracer_process_thread_buffer(snTracer *tracer, snTracerThreadBuffer *thread_buffer) {
+    return sn_tracer_process_thread_buffer_n(tracer, thread_buffer, -1);
+}
+
 size_t sn_tracer_process_n(snTracer *tracer, size_t n) {
     size_t count = 0;
 
-process_one_event_in_each_buffer:
+process_one_event_in_all_buffers:
     if (tracer->process_buffer == NULL)
         // tracer->process_buffer = tracer->thread_buffer;
         sn_tracer_get_thread_buffer(tracer, tracer->process_buffer);
 
     size_t iter_count = 0;
 
-    while (count + iter_count < n && tracer->process_buffer) {
-        snTracerThreadBuffer *thread_buffer = tracer->process_buffer;
-        char *ring_buffer = ((char *)thread_buffer) + sizeof(snTracerThreadBuffer);
+    while (tracer->process_buffer && count + iter_count < n) {
+        iter_count += sn_tracer_process_thread_buffer_n(tracer, tracer->process_buffer, 1);
+        tracer->process_buffer = tracer->process_buffer->next;
+    }
 
-        snTracerEvent event = {
-            .thread_id = thread_buffer->thread_id,
-        };
+    count += iter_count;
+    if (iter_count != 0 && count < n) goto process_one_event_in_all_buffers;
 
-        sn_tracer_lock_thread(tracer, thread_buffer);
+    return count;
+}
 
-        if (thread_buffer->read_offset == thread_buffer->write_offset) {
-            sn_tracer_unlock_thread(tracer, thread_buffer);
-            goto process_next;
-        }
+size_t sn_tracer_process_thread_buffer_n(snTracer *tracer, snTracerThreadBuffer *thread_buffer, size_t n) {
+    size_t count = 0;
+    char *ring_buffer = ((char *)thread_buffer) + sizeof(snTracerThreadBuffer);
+    snTracerEvent event = {.thread_id = thread_buffer->thread_id};
 
+    sn_tracer_lock_thread(tracer, thread_buffer);
+
+    while (thread_buffer->read_offset != thread_buffer->write_offset && count < n) {
         if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerEventHeader))
             thread_buffer->read_offset = 0;
 
         void *ptr = ring_buffer + thread_buffer->read_offset;
         snTracerEventHeader *header = GET_ALIGNED_PTR(ptr, snTracerEventHeader);
 
-        if (IS_EVENT_INCOMPLETE(header)) {
-            sn_tracer_unlock_thread(tracer, thread_buffer);
-            goto process_next;
-        }
+        if (IS_EVENT_INCOMPLETE(header)) break;
 
         event.type = header->type;
         event.timestamp = header->timestamp;
@@ -301,17 +306,14 @@ process_one_event_in_each_buffer:
                 break;
         }
 
-        iter_count++;
+        count++;
         if (tracer->hooks.consumer)
             tracer->hooks.consumer(event, tracer->hooks.consumer_data);
 
-process_next:
-        tracer->process_buffer = tracer->process_buffer->next;
+        sn_tracer_lock_thread(tracer, thread_buffer);
     }
 
-    count += iter_count;
-    // iter_count = 0 => There was no event in any thread buffers
-    if (iter_count != 0 && count < n) goto process_one_event_in_each_buffer;
+    sn_tracer_unlock_thread(tracer, thread_buffer);
 
     return count;
 }

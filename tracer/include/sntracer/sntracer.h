@@ -127,7 +127,11 @@ SN_API bool sn_tracer_is_enabled(snTracer *tracer);
 
 SN_API size_t sn_tracer_process(snTracer *tracer);
 
+SN_API size_t sn_tracer_process_thread_buffer(snTracer *tracer, snTracerThreadBuffer *thread_buffer);
+
 SN_API size_t sn_tracer_process_n(snTracer *tracer, size_t n);
+
+SN_API size_t sn_tracer_process_thread_buffer_n(snTracer *tracer, snTracerThreadBuffer *thread_buffer, size_t n);
 
 SN_API snTracerEventRecord sn_tracer_event_begin(snTracer *tracer, snTracerThreadBuffer *thread_buffer, snTracerEventType type);
 
