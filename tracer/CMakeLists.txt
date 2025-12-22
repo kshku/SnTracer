@@ -9,6 +9,6 @@ endif()
 target_include_directories(sntracer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(sntracer PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-target_link_libraries(sntracer PRIVATE configs)
+target_link_libraries(sntracer PRIVATE sn_tracer_configs)
 
 add_subdirectory(src)

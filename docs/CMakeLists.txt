@@ -7,7 +7,7 @@ if(DOXYGEN_FOUND)
         @ONLY
     )
 
-    add_custom_target(docs
+    add_custom_target(sn_tracer_docs
         COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen"
