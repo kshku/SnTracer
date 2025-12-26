@@ -32,7 +32,7 @@
 
 #define GET_ALIGNED_PTR(x, type) ((type *)GET_ALIGNED((x), alignof(type)))
 
-#define EVENT_VALIDITY_MASK (1 << 31)
+#define EVENT_VALIDITY_MASK (1 << 15)
 #define SET_EVENT_COMPLETED(header) (header)->type &= ~EVENT_VALIDITY_MASK;
 #define SET_EVENT_INCOMPLETE(header) (header)->type |= EVENT_VALIDITY_MASK;
 #define IS_EVENT_INCOMPLETE(header) ((header)->type & EVENT_VALIDITY_MASK)
