@@ -34,38 +34,56 @@ typedef struct snTracerEventHeader {
 } snTracerEventHeader;
 
 /**
- * @struct snTracerScopeBeginPayLoad
+ * @struct snTracerScopeBeginPayload
  * @brief Payload for scope-begin events.
  *
  * All string pointers must remain valid for the lifetime
  * of the tracing session (string literals recommended).
  */
-typedef struct snTracerScopeBeginPayLoad {
+typedef struct snTracerScopeBeginPayload {
     const char *name;
     const char *func;
     const char *file;
     uint32_t line;
-} snTracerScopeBeginPayLoad;
+} snTracerScopeBeginPayload;
 
 /**
- * @struct snTracerInstantPayLoad
+ * @struct snTracerInstantPayload
  * @brief Payload for instant events.
  */
-typedef struct snTracerInstantPayLoad {
+typedef struct snTracerInstantPayload {
     const char *name;
     const char *func;
     const char *file;
     uint32_t line;
-} snTracerInstantPayLoad;
+} snTracerInstantPayload;
 
 /**
- * @struct snTracerCounterPayLoad
+ * @struct snTracerCounterPayload
  * @brief Payload for counter events.
  */
-typedef struct snTracerCounterPayLoad {
+typedef struct snTracerCounterPayload {
     const char *name;
     int64_t value;
-} snTracerCounterPayLoad;
+} snTracerCounterPayload;
+
+/**
+ * @struct snTracerFlowPayload
+ * @brief Payload for flow events.
+ */
+typedef struct snTracerFlowPayload {
+    const char *name;
+    uint64_t id;
+} snTracerFlowPayload;
+
+/**
+ * @struct snTracerMetadataPayload.
+ * @brief Payload for metadata events.
+ */
+typedef struct snTracerMetadataPayload {
+    const char *name;
+    const char *value;
+} snTracerMetadataPayload;
 
 /**
  * @struct snTracerEvent
@@ -77,9 +95,11 @@ typedef struct snTracerCounterPayLoad {
 typedef struct snTracerEvent {
     uint64_t timestamp;
     union {
-        snTracerScopeBeginPayLoad scope_begin;
-        snTracerInstantPayLoad instant;
-        snTracerCounterPayLoad counter;
+        snTracerScopeBeginPayload scope_begin;
+        snTracerInstantPayload instant;
+        snTracerCounterPayload counter;
+        snTracerFlowPayload flow;
+        snTracerMetadataPayload metadata;
     };
     snTracerEventType type;
     uint64_t thread_id;
@@ -223,9 +243,11 @@ typedef struct snTracer {
 typedef struct snTracerEventRecord {
     snTracerEventHeader *header;
     union {
-        snTracerScopeBeginPayLoad *scope_begin;
-        snTracerInstantPayLoad *instant;
-        snTracerCounterPayLoad *counter;
+        snTracerScopeBeginPayload *scope_begin;
+        snTracerInstantPayload *instant;
+        snTracerCounterPayload *counter;
+        snTracerFlowPayload *flow;
+        snTracerMetadataPayload *metadata;
     };
 } snTracerEventRecord;
 
@@ -365,6 +387,27 @@ SN_API void sn_tracer_trace_instant(snTracer *tracer, snTracerThreadBuffer *thre
 SN_API void sn_tracer_trace_counter(snTracer *tracer, snTracerThreadBuffer *thread_buffer,
         const char *name, int64_t value);
 
+/**
+ * @brief Helper function, use @ref SN_TRACER_TRACE_FLOW_BEGIN macro.
+ */
+SN_API void sn_tracer_trace_flow_begin(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
+
+/**
+ * @brief Helper function, use @ref SN_TRACER_TRACE_FLOW_STEP macro.
+ */
+SN_API void sn_tracer_trace_flow_step(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
+
+/**
+ * @brief Helper function, use @ref SN_TRACER_TRACE_FLOW_END macro.
+ */
+SN_API void sn_tracer_trace_flow_end(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
+
+/**
+ * @brief Helper function, use @ref SN_TRACER_TRACE_METADATA macro.
+ */
+SN_API void sn_tracer_trace_metadata(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, const char *value);
+
+
 #ifdef SN_TRACER_ENABLE
     /**
      * @note All the name passed to sntracer should be static or literals.
@@ -408,11 +451,40 @@ SN_API void sn_tracer_trace_counter(snTracer *tracer, snTracerThreadBuffer *thre
      */
     #define SN_TRACER_TRACE_COUNTER(tracer, thread_buffer, name, value) \
         sn_tracer_trace_counter(tracer, thread_buffer, name, value)
+
+    /**
+     * @note All the name passed to sntracer should be static or literals.
+     *      They must outlive the tracer.
+     */
+    #define SN_TRACER_TRACE_FLOW_BEGIN(tracer, thread_buffer, name, id) \
+        sn_tracer_trace_flow_begin(tracer, thread_buffer, name, id)
+    /**
+     * @note All the name passed to sntracer should be static or literals.
+     *      They must outlive the tracer.
+     */
+    #define SN_TRACER_TRACE_FLOW_STEP(tracer, thread_buffer, name, id) \
+        sn_tracer_trace_flow_step(tracer, thread_buffer, name, id)
+    /**
+     * @note All the name passed to sntracer should be static or literals.
+     *      They must outlive the tracer.
+     */
+    #define SN_TRACER_TRACE_FLOW_END(tracer, thread_buffer, name, id) \
+        sn_tracer_trace_flow_end(tracer, thread_buffer, name, id)
+
+    /**
+     * @note All the name passed to sntracer should be static or literals.
+     *      They must outlive the tracer.
+     */
+    #define SN_TRACER_TRACE_METADATA(tracer, thread_buffer, name, value) \
+        sn_tracer_trace_metadata(tracer, thread_buffer, name, value)
 #else
     #define SN_TRACER_TRACER_SCOPE_BEGIN(tracer, thread_buffer, name)
     #define SN_TRACER_TRACE_SCOPE_END(tracer, thread_buffer)
     #define SN_TRACER_TRACE_SCOPE(tracer, thread_buffer, name)
     #define SN_TRACER_TRACE_INSTANT(tracer, thread_buffer, name)
     #define SN_TRACER_TRACE_COUNTER(tracer, thread_buffer, name, value)
+    #define SN_TRACER_TRACE_FLOW_BEGIN(tracer, thread_buffer, name, id)
+    #define SN_TRACER_TRACE_FLOW_STEP(tracer, thread_buffer, name, id)
+    #define SN_TRACER_TRACE_METADATA(tracer, thread_buffer, name, value)
 #endif
 

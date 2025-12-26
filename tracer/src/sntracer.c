@@ -140,24 +140,27 @@ snTracerEventRecord sn_tracer_event_begin(snTracer *tracer, snTracerThreadBuffer
 
     switch (type) {
         case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
-            record.scope_begin = allocate_from_ring_buffer(snTracerScopeBeginPayLoad);
+            record.scope_begin = allocate_from_ring_buffer(snTracerScopeBeginPayload);
             if (!record.scope_begin) goto failed_payload_allocation;
             break;
         case SN_TRACER_EVENT_TYPE_INSTANT:
-            record.instant = allocate_from_ring_buffer(snTracerInstantPayLoad);
+            record.instant = allocate_from_ring_buffer(snTracerInstantPayload);
             if (!record.instant) goto failed_payload_allocation;
             break;
         case SN_TRACER_EVENT_TYPE_COUNTER:
-            record.counter = allocate_from_ring_buffer(snTracerCounterPayLoad);
+            record.counter = allocate_from_ring_buffer(snTracerCounterPayload);
             if (!record.counter) goto failed_payload_allocation;
             break;
-
         case SN_TRACER_EVENT_TYPE_FLOW_BEGIN:
         case SN_TRACER_EVENT_TYPE_FLOW_STEP:
         case SN_TRACER_EVENT_TYPE_FLOW_END:
-        case SN_TRACER_EVENT_TYPE_METADATA:
+            record.flow = allocate_from_ring_buffer(snTracerFlowPayload);
+            if (!record.flow) goto failed_payload_allocation;
             break;
-
+        case SN_TRACER_EVENT_TYPE_METADATA:
+            record.metadata = allocate_from_ring_buffer(snTracerMetadataPayload);
+            if (!record.flow) goto failed_payload_allocation;
+            break;
         case SN_TRACER_EVENT_TYPE_SCOPE_END:
         default:
             break;
@@ -237,73 +240,79 @@ size_t sn_tracer_process_thread_buffer_n(snTracer *tracer, snTracerThreadBuffer 
 
         sn_tracer_unlock_thread(tracer, thread_buffer);
 
-        // Just to avoid creating scope inside switch 
-        union {
-            snTracerScopeBeginPayLoad *scope_begin;
-            snTracerInstantPayLoad *instant;
-            snTracerCounterPayLoad *counter;
-        } payload_ptr;
-        void *end_ptr;
-        switch (header->type) {
-            case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
-            case SN_TRACER_EVENT_TYPE_INSTANT:
-            case SN_TRACER_EVENT_TYPE_COUNTER:
-                sn_tracer_lock_thread(tracer, thread_buffer);
-                ptr = ring_buffer + thread_buffer->read_offset;
+        if (header->type != SN_TRACER_EVENT_TYPE_SCOPE_END) {
+            // Just to avoid creating scope inside switch 
+            union {
+                snTracerScopeBeginPayload *scope_begin;
+                snTracerInstantPayload *instant;
+                snTracerCounterPayload *counter;
+                snTracerFlowPayload *flow;
+                snTracerMetadataPayload *metadata;
+            } payload_ptr;
+            void *end_ptr;
 
-                switch (header->type) {
-                    case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
-                        if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerScopeBeginPayLoad)) {
-                            thread_buffer->read_offset = 0;
-                            ptr = ring_buffer + thread_buffer->read_offset;
-                        }
-                        payload_ptr.scope_begin = GET_ALIGNED_PTR(ptr, snTracerScopeBeginPayLoad);
-                        event.scope_begin = *payload_ptr.scope_begin;
-                        end_ptr = (void *)(payload_ptr.scope_begin + 1);
-                        break;
-                    case SN_TRACER_EVENT_TYPE_INSTANT:
-                        if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerInstantPayLoad)) {
-                            thread_buffer->read_offset = 0;
-                            ptr = ring_buffer + thread_buffer->read_offset;
-                        }
-                        payload_ptr.instant = GET_ALIGNED_PTR(ptr, snTracerInstantPayLoad);
-                        event.instant = *payload_ptr.instant;
-                        end_ptr = (void *)(payload_ptr.instant + 1);
-                        break;
-                    case SN_TRACER_EVENT_TYPE_COUNTER:
-                        if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerCounterPayLoad)) {
-                            thread_buffer->read_offset = 0;
-                            ptr = ring_buffer + thread_buffer->read_offset;
-                        }
-                        payload_ptr.counter = GET_ALIGNED_PTR(ptr, snTracerCounterPayLoad);
-                        event.counter = *payload_ptr.counter;
-                        end_ptr = (void *)(payload_ptr.counter + 1);
-                        break;
-                    case SN_TRACER_EVENT_TYPE_SCOPE_END:
-                    case SN_TRACER_EVENT_TYPE_FLOW_BEGIN:
-                    case SN_TRACER_EVENT_TYPE_FLOW_STEP:
-                    case SN_TRACER_EVENT_TYPE_FLOW_END:
-                    case SN_TRACER_EVENT_TYPE_METADATA:
-                    default:
-                        // Will not reach here
-                        break;
-                }
+            sn_tracer_lock_thread(tracer, thread_buffer);
+            ptr = ring_buffer + thread_buffer->read_offset;
 
-                thread_buffer->read_offset += PTR_BYTE_DIFF(end_ptr, ptr);
-                if (thread_buffer->read_offset >= thread_buffer->buffer_size)
-                    thread_buffer->read_offset = 0;
-                sn_tracer_unlock_thread(tracer, thread_buffer);
-                break;
+            switch (header->type) {
+                case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
+                    if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerScopeBeginPayload)) {
+                        thread_buffer->read_offset = 0;
+                        ptr = ring_buffer + thread_buffer->read_offset;
+                    }
+                    payload_ptr.scope_begin = GET_ALIGNED_PTR(ptr, snTracerScopeBeginPayload);
+                    event.scope_begin = *payload_ptr.scope_begin;
+                    end_ptr = (void *)(payload_ptr.scope_begin + 1);
+                    break;
+                case SN_TRACER_EVENT_TYPE_INSTANT:
+                    if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerInstantPayload)) {
+                        thread_buffer->read_offset = 0;
+                        ptr = ring_buffer + thread_buffer->read_offset;
+                    }
+                    payload_ptr.instant = GET_ALIGNED_PTR(ptr, snTracerInstantPayload);
+                    event.instant = *payload_ptr.instant;
+                    end_ptr = (void *)(payload_ptr.instant + 1);
+                    break;
+                case SN_TRACER_EVENT_TYPE_COUNTER:
+                    if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerCounterPayload)) {
+                        thread_buffer->read_offset = 0;
+                        ptr = ring_buffer + thread_buffer->read_offset;
+                    }
+                    payload_ptr.counter = GET_ALIGNED_PTR(ptr, snTracerCounterPayload);
+                    event.counter = *payload_ptr.counter;
+                    end_ptr = (void *)(payload_ptr.counter + 1);
+                    break;
+                case SN_TRACER_EVENT_TYPE_FLOW_BEGIN:
+                case SN_TRACER_EVENT_TYPE_FLOW_STEP:
+                case SN_TRACER_EVENT_TYPE_FLOW_END:
+                    if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerFlowPayload)) {
+                        thread_buffer->read_offset = 0;
+                        ptr = ring_buffer + thread_buffer->read_offset;
+                    }
+                    payload_ptr.flow = GET_ALIGNED_PTR(ptr, snTracerFlowPayload);
+                    event.flow = *payload_ptr.flow;
+                    end_ptr = (void *)(payload_ptr.flow + 1);
+                    break;
+                case SN_TRACER_EVENT_TYPE_METADATA:
+                    if (thread_buffer->buffer_size - thread_buffer->read_offset < sizeof(snTracerMetadataPayload)) {
+                        thread_buffer->read_offset = 0;
+                        ptr = ring_buffer + thread_buffer->read_offset;
+                    }
+                    payload_ptr.metadata = GET_ALIGNED_PTR(ptr, snTracerMetadataPayload);
+                    event.metadata = *payload_ptr.metadata;
+                    end_ptr = (void *)(payload_ptr.metadata + 1);
+                    break;
 
-            case SN_TRACER_EVENT_TYPE_SCOPE_END:
-                break;
+                case SN_TRACER_EVENT_TYPE_SCOPE_END:
+                default:
+                    // Will not reach here
+                    break;
+            }
 
-            case SN_TRACER_EVENT_TYPE_FLOW_BEGIN:
-            case SN_TRACER_EVENT_TYPE_FLOW_STEP:
-            case SN_TRACER_EVENT_TYPE_FLOW_END:
-            case SN_TRACER_EVENT_TYPE_METADATA:
-            default:
-                break;
+            thread_buffer->read_offset += PTR_BYTE_DIFF(end_ptr, ptr);
+            if (thread_buffer->read_offset >= thread_buffer->buffer_size)
+                thread_buffer->read_offset = 0;
+            sn_tracer_unlock_thread(tracer, thread_buffer);
         }
 
         count++;
@@ -323,7 +332,7 @@ void sn_tracer_trace_scope_begin(snTracer *tracer, snTracerThreadBuffer *thread_
     snTracerEventRecord record = sn_tracer_event_begin(tracer, thread_buffer, SN_TRACER_EVENT_TYPE_SCOPE_BEGIN);
     if (!record.header || !record.scope_begin) return;
 
-    *record.scope_begin = (snTracerScopeBeginPayLoad){
+    *record.scope_begin = (snTracerScopeBeginPayload){
         .name = name,
         .func = func,
         .file = file,
@@ -347,7 +356,7 @@ void sn_tracer_trace_instant(snTracer *tracer, snTracerThreadBuffer *thread_buff
 
     if (!record.header || !record.instant) return;
 
-    *record.instant = (snTracerInstantPayLoad) {
+    *record.instant = (snTracerInstantPayload) {
         .name = name,
         .func = func,
         .file = file,
@@ -363,7 +372,59 @@ void sn_tracer_trace_counter(snTracer *tracer, snTracerThreadBuffer *thread_buff
 
     if (!record.header || !record.counter) return;
 
-    *record.counter = (snTracerCounterPayLoad) {
+    *record.counter = (snTracerCounterPayload) {
+        .name = name,
+        .value = value
+    };
+
+    sn_tracer_event_commit(tracer, thread_buffer, record);
+}
+
+void sn_tracer_trace_flow_begin(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id) {
+    snTracerEventRecord record = sn_tracer_event_begin(tracer, thread_buffer, SN_TRACER_EVENT_TYPE_FLOW_BEGIN);
+
+    if (!record.header || !record.flow) return;
+
+    *record.flow = (snTracerFlowPayload) {
+        .id = id,
+        .name = name
+    };
+
+    sn_tracer_event_commit(tracer, thread_buffer, record);
+}
+
+void sn_tracer_trace_flow_step(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id) {
+    snTracerEventRecord record = sn_tracer_event_begin(tracer, thread_buffer, SN_TRACER_EVENT_TYPE_FLOW_STEP);
+
+    if (!record.header || !record.flow) return;
+
+    *record.flow = (snTracerFlowPayload) { 
+        .id = id,
+        .name = name
+    };
+
+    sn_tracer_event_commit(tracer, thread_buffer, record);
+}
+
+void sn_tracer_trace_flow_end(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id) {
+    snTracerEventRecord record = sn_tracer_event_begin(tracer, thread_buffer, SN_TRACER_EVENT_TYPE_FLOW_END);
+
+    if (!record.header || !record.flow) return;
+
+    *record.flow = (snTracerFlowPayload) {
+        .id = id,
+        .name = name
+    };
+
+    sn_tracer_event_commit(tracer, thread_buffer, record);
+}
+
+void sn_tracer_trace_metadata(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, const char *value) {
+    snTracerEventRecord record = sn_tracer_event_begin(tracer, thread_buffer, SN_TRACER_EVENT_TYPE_METADATA);
+
+    if (!record.header || !record.metadata) return;
+
+    *record.metadata = (snTracerMetadataPayload) {
         .name = name,
         .value = value
     };

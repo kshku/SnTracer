@@ -141,3 +141,5 @@ And for SCOPE\_END:
 }
 ```
 Write to a file, open it in chrome://tracing.
+
+***Checkout `test/example_tracing.c`***

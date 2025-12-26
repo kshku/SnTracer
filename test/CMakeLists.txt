@@ -18,5 +18,5 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_dependencies(copy_dlls sn_tracer_test)
 endif()
 
-add_executable(multithread multithread.c)
-target_link_libraries(multithread PRIVATE sntracer)
+add_executable(example_tracing example_tracing.c)
+target_link_libraries(example_tracing PRIVATE sntracer)
