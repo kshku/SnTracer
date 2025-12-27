@@ -69,19 +69,6 @@ static void *ring_buffer_allocate(snTracerThreadBuffer *thread_buffer, size_t si
     return NULL;
 }
 
-bool sn_tracer_init(snTracer *tracer, snTracerHooks hooks) {
-    if (!hooks.time_now || !hooks.thread_id) return false;
-
-    *tracer = (snTracer) {
-        .thread_buffer = NULL,
-        .hooks = hooks,
-        .enabled = false,
-        .process_buffer = NULL
-    };
-
-    return true;
-}
-
 snTracerThreadBuffer *sn_tracer_add_thread(snTracer *tracer, void *buffer, size_t buffer_size, void *thread_lock) {
     snTracerThreadBuffer *thread_buffer = GET_ALIGNED_PTR(buffer, snTracerThreadBuffer);
     buffer_size -= PTR_BYTE_DIFF(thread_buffer, buffer);
@@ -101,24 +88,6 @@ snTracerThreadBuffer *sn_tracer_add_thread(snTracer *tracer, void *buffer, size_
     sn_tracer_set_thread_buffer(tracer, thread_buffer);
 
     return thread_buffer;
-}
-
-void sn_tracer_deinit(snTracer *tracer) {
-    while (sn_tracer_process(tracer));
-
-    *tracer = (snTracer){0};
-}
-
-void sn_tracer_enable(snTracer *tracer) {
-    tracer->enabled = true;
-}
-
-void sn_tracer_disable(snTracer *tracer) {
-    tracer->enabled = false;
-}
-
-bool sn_tracer_is_enabled(snTracer *tracer) {
-    return tracer->enabled;
 }
 
 snTracerEventRecord sn_tracer_event_begin(snTracer *tracer, snTracerThreadBuffer *thread_buffer, snTracerEventType type) {
@@ -185,14 +154,6 @@ void sn_tracer_event_commit(snTracer *tracer, snTracerThreadBuffer *thread_buffe
     SET_EVENT_COMPLETED(record.header);
 
     sn_tracer_unlock_thread(tracer, thread_buffer);
-}
-
-size_t sn_tracer_process(snTracer *tracer) {
-    return sn_tracer_process_n(tracer, -1);
-}
-
-size_t sn_tracer_process_thread_buffer(snTracer *tracer, snTracerThreadBuffer *thread_buffer) {
-    return sn_tracer_process_thread_buffer_n(tracer, thread_buffer, -1);
 }
 
 size_t sn_tracer_process_n(snTracer *tracer, size_t n) {

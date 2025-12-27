@@ -260,40 +260,36 @@ typedef struct snTracerEventRecord {
  *
  * @return true on success, false if required hooks are missing.
  */
-SN_API bool sn_tracer_init(snTracer *tracer, snTracerHooks hooks);
+SN_INLINE bool sn_tracer_init(snTracer *tracer, snTracerHooks hooks) {
+    if (!hooks.time_now || !hooks.thread_id) return false;
 
-/**
- * @brief Registers a per-thread buffer.
- *
- * @param tracer Tracer instance.
- * @param buffer Memory block for the buffer.
- * @param buffer_size Size of memory block.
- * @param thread_lock Optional lock object.
- *
- * @return Pointer to initialized thread buffer.
- */
-SN_API snTracerThreadBuffer *sn_tracer_add_thread(snTracer *tracer, void *buffer, size_t buffer_size, void *thread_lock);
+    *tracer = (snTracer) {
+        .thread_buffer = NULL,
+        .hooks = hooks,
+        .enabled = false,
+        .process_buffer = NULL
+    };
 
-/**
- * @brief Flushes and deinitializes the tracer.
- *
- * @param tracer Tracer instance.
- */
-SN_API void sn_tracer_deinit(snTracer *tracer);
+    return true;
+}
 
 /**
  * @brief Enables tracing.
  *
  * @param tracer Tracer instance.
  */
-SN_API void sn_tracer_enable(snTracer *tracer);
+SN_FORCE_INLINE void sn_tracer_enable(snTracer *tracer) {
+    tracer->enabled = true;
+}
 
 /**
  * @brief Disables tracing.
  *
  * @param tracer Tracer instance.
  */
-SN_API void sn_tracer_disable(snTracer *tracer);
+SN_FORCE_INLINE void sn_tracer_disable(snTracer *tracer) {
+    tracer->enabled = false;
+}
 
 /**
  * @brief Returns whether tracing is enabled.
@@ -302,27 +298,9 @@ SN_API void sn_tracer_disable(snTracer *tracer);
  *
  * @return Returns true if enabled, else false.
  */
-SN_API bool sn_tracer_is_enabled(snTracer *tracer);
-
-
-/**
- * @brief Processes all available events.
- *
- * @param tracer Tracer instance.
- *
- * @return Returns number of events processed.
- */
-SN_API size_t sn_tracer_process(snTracer *tracer);
-
-/**
- * @brief Processes all events from a specific thread buffer.
- *
- * @param tracer Tracer instance.
- * @param thread_buffer The thread buffer.
- *
- * @return Returns number of events processed.
- */
-SN_API size_t sn_tracer_process_thread_buffer(snTracer *tracer, snTracerThreadBuffer *thread_buffer);
+SN_FORCE_INLINE bool sn_tracer_is_enabled(snTracer *tracer) {
+    return tracer->enabled;
+}
 
 /**
  * @brief Processes up to @p n events across all buffers.
@@ -344,6 +322,52 @@ SN_API size_t sn_tracer_process_n(snTracer *tracer, size_t n);
  * @return Returns number of events processed.
  */
 SN_API size_t sn_tracer_process_thread_buffer_n(snTracer *tracer, snTracerThreadBuffer *thread_buffer, size_t n);
+
+/**
+ * @brief Processes all available events.
+ *
+ * @param tracer Tracer instance.
+ *
+ * @return Returns number of events processed.
+ */
+SN_FORCE_INLINE size_t sn_tracer_process(snTracer *tracer) {
+    return sn_tracer_process_n(tracer, -1);
+}
+
+/**
+ * @brief Processes all events from a specific thread buffer.
+ *
+ * @param tracer Tracer instance.
+ * @param thread_buffer The thread buffer.
+ *
+ * @return Returns number of events processed.
+ */
+SN_FORCE_INLINE size_t sn_tracer_process_thread_buffer(snTracer *tracer, snTracerThreadBuffer *thread_buffer) {
+    return sn_tracer_process_thread_buffer_n(tracer, thread_buffer, -1);
+}
+
+/**
+ * @brief Registers a per-thread buffer.
+ *
+ * @param tracer Tracer instance.
+ * @param buffer Memory block for the buffer.
+ * @param buffer_size Size of memory block.
+ * @param thread_lock Optional lock object.
+ *
+ * @return Pointer to initialized thread buffer.
+ */
+SN_API snTracerThreadBuffer *sn_tracer_add_thread(snTracer *tracer, void *buffer, size_t buffer_size, void *thread_lock);
+
+/**
+ * @brief Flushes and deinitializes the tracer.
+ *
+ * @param tracer Tracer instance.
+ */
+SN_INLINE void sn_tracer_deinit(snTracer *tracer) {
+    while (sn_tracer_process(tracer));
+
+    *tracer = (snTracer){0};
+}
 
 /**
  * @brief Begins a new event record.
