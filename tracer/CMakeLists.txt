@@ -3,7 +3,7 @@ if(SN_TRACER_BUILD_SHARED)
     target_compile_definitions(sntracer PRIVATE SN_EXPORT)
 else()
     add_library(sntracer STATIC)
-    target_compile_definitions(sntracer PRIVATE SN_TRACER_STATIC)
+    target_compile_definitions(sntracer PUBLIC SN_TRACER_STATIC)
 endif()
 
 target_include_directories(sntracer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")

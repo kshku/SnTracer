@@ -2,9 +2,10 @@
 #define SN_TRACER_ENABLE
 #include <sntracer/sntracer.h>
 
+#include <stdio.h>
+
 #ifndef SN_OS_WINDOWS
 
-#include <stdio.h>
 #include <time.h>
 #include <stdatomic.h>
 
@@ -232,6 +233,12 @@ int main(void) {
 
     sn_tracer_deinit(&tracer);
     pthread_rwlock_destroy(&read_write_lock);
+}
+
+#else
+
+int main(void) {
+	printf("Test not implemented for windows!");
 }
 
 #endif

@@ -2,12 +2,14 @@
 #define SN_TRACER_ENABLE
 #include <sntracer/sntracer.h>
 
-#ifndef SN_OS_WINDOWS
-
 #include <stdio.h>
 #include <time.h>
 
-#include <pthread.h>
+#ifdef SN_OS_WINDOWS
+	#include <windows.h>
+#else
+	#include <pthread.h>
+#endif
 
 #define STRINGIFY(x) #x
 
@@ -15,21 +17,39 @@
 
 uint64_t time_now_hook(void *data) {
     (void)data;
+#ifdef SN_OS_WINDOWS
+    static LARGE_INTEGER qpc_freequency = {0};
+    if (!qpc_freequency.QuadPart) QueryPerformanceFrequency(&qpc_freequency);
+
+    LARGE_INTEGER counter;
+    QueryPerformanceCounter(&counter);
+
+    return (uint64_t)((counter.QuadPart * 1000000000ll) / qpc_freequency.QuadPart);
+#else
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     return (uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
+#endif
 } 
 
 void time_sleep(uint32_t ms) {
+#ifdef SN_OS_WINDOWS
+    Sleep(ms);
+#else
     struct timespec time = {.tv_sec = ms / 1000,
         .tv_nsec = (ms % 1000) * 1000000};
 
     nanosleep(&time, NULL);
+#endif
 }
 
 uint64_t thread_id_hook(void *data) {
     (void)data;
+#ifdef SN_OS_WINDOWS
+    return (uint64_t)GetCurrentThreadId();
+#else
     return (uint64_t)pthread_self();
+#endif
 }
 
 const char *get_event_name(snTracerEventType type) {
@@ -50,6 +70,8 @@ const char *get_event_name(snTracerEventType type) {
             return STRINGIFY(SN_TRACER_EVENT_TYPE_FLOW_END);
         case SN_TRACER_EVENT_TYPE_METADATA:
             return STRINGIFY(SN_TRACER_EVENT_TYPE_METADATA);
+        default:
+            return NULL;
     }
 }
 
@@ -130,4 +152,3 @@ int main(void) {
 
 }
 
-#endif

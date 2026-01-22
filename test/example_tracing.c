@@ -2,9 +2,10 @@
 #define SN_TRACER_ENABLE
 #include <sntracer/sntracer.h>
 
+#include <stdio.h>
+
 #ifndef SN_OS_WINDOWS
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdatomic.h>
@@ -373,5 +374,10 @@ static void chrome_trace_consumer(snTracerEvent event, void *data) {
     }
 }
 
+#else
+
+int main(void) {
+    printf("Test is not implemented for windows!");
+}
 
 #endif
