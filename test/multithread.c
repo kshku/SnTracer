@@ -1,17 +1,16 @@
 #define _GNU_SOURCE
 #define SN_TRACER_ENABLE
 #include <sntracer/sntracer.h>
-
 #include <stdio.h>
 
 #ifndef SN_OS_WINDOWS
 
-#include <time.h>
-#include <stdatomic.h>
+    #include <pthread.h>
+    #include <stdatomic.h>
+    #include <time.h>
 
-#include <pthread.h>
+    #define STRINGIFY(x) #x
 
-#define STRINGIFY(x) #x
 const char *get_event_name(snTracerEventType type) {
     switch (type) {
         case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
@@ -33,18 +32,17 @@ const char *get_event_name(snTracerEventType type) {
     }
 }
 
-#define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
+    #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
 uint64_t time_now_hook(void *data) {
     (void)data;
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     return (uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
-} 
+}
 
 void time_sleep(uint32_t ms) {
-    struct timespec time = {.tv_sec = ms / 1000,
-        .tv_nsec = (ms % 1000) * 1000000};
+    struct timespec time = {.tv_sec = ms / 1000, .tv_nsec = (ms % 1000) * 1000000};
 
     nanosleep(&time, NULL);
 }
@@ -131,7 +129,8 @@ typedef struct {
 void *producer_thread(void *args) {
     ProducerArags *pa = args;
 
-    snTracerThreadBuffer *thread_buffer = sn_tracer_add_thread(pa->tracer, pa->buffer, pa->buffer_size, pa->mutex);
+    snTracerThreadBuffer *thread_buffer
+        = sn_tracer_add_thread(pa->tracer, pa->buffer, pa->buffer_size, pa->mutex);
 
     for (int i = 0; i < 100; ++i) {
         SN_TRACER_TRACE_COUNTER(pa->tracer, thread_buffer, "loop counter", i);
@@ -189,8 +188,7 @@ int main(void) {
         .read_write_lock = &read_write_lock,
 
         .consumer = consumer_hook,
-        .consumer_data = NULL
-    };
+        .consumer_data = NULL};
 
     sn_tracer_init(&tracer, hooks);
     sn_tracer_enable(&tracer);
@@ -201,8 +199,8 @@ int main(void) {
 
     pthread_create(&consumer, NULL, consumer_thread, &ca);
 
-#define NUM_PRODUCERS 4
-#define BUFFER_SIZE_PER_PRODUCER 1024
+    #define NUM_PRODUCERS 4
+    #define BUFFER_SIZE_PER_PRODUCER 1024
 
     char buffer[BUFFER_SIZE_PER_PRODUCER * NUM_PRODUCERS];
     pthread_mutex_t mutexes[NUM_PRODUCERS];
@@ -215,8 +213,7 @@ int main(void) {
             .tracer = &tracer,
             .buffer = &buffer[i * BUFFER_SIZE_PER_PRODUCER],
             .buffer_size = BUFFER_SIZE_PER_PRODUCER,
-            .mutex = &mutexes[i]
-        };
+            .mutex = &mutexes[i]};
 
         pthread_create(&producers[i], NULL, producer_thread, &pas[i]);
     }
@@ -238,7 +235,7 @@ int main(void) {
 #else
 
 int main(void) {
-	printf("Test not implemented for windows!");
+    printf("Test not implemented for windows!");
 }
 
 #endif

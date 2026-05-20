@@ -1,14 +1,13 @@
 #define _GNU_SOURCE
 #define SN_TRACER_ENABLE
 #include <sntracer/sntracer.h>
-
 #include <stdio.h>
 #include <time.h>
 
 #ifdef SN_OS_WINDOWS
-	#include <windows.h>
+    #include <windows.h>
 #else
-	#include <pthread.h>
+    #include <pthread.h>
 #endif
 
 #define STRINGIFY(x) #x
@@ -30,14 +29,13 @@ uint64_t time_now_hook(void *data) {
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     return (uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
 #endif
-} 
+}
 
 void time_sleep(uint32_t ms) {
 #ifdef SN_OS_WINDOWS
     Sleep(ms);
 #else
-    struct timespec time = {.tv_sec = ms / 1000,
-        .tv_nsec = (ms % 1000) * 1000000};
+    struct timespec time = {.tv_sec = ms / 1000, .tv_nsec = (ms % 1000) * 1000000};
 
     nanosleep(&time, NULL);
 #endif
@@ -112,7 +110,6 @@ void consumer_hook(snTracerEvent event, void *data) {
     putchar('\n');
 }
 
-
 int main(void) {
     snTracer tracer;
 
@@ -139,7 +136,6 @@ int main(void) {
             printf("done wasting time!\n");
             sn_tracer_process(&tracer);
         }
-
     }
 
     SN_TRACER_TRACE_COUNTER(&tracer, thread_buffer, "test counter", 10);
@@ -149,6 +145,5 @@ int main(void) {
     SN_TRACER_TRACE_COUNTER(&tracer, thread_buffer, "test counter", 15);
 
     sn_tracer_deinit(&tracer);
-
 }
 

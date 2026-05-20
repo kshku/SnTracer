@@ -1,23 +1,21 @@
 #define _GNU_SOURCE
 #define SN_TRACER_ENABLE
 #include <sntracer/sntracer.h>
-
 #include <stdio.h>
 
 #ifndef SN_OS_WINDOWS
 
-#include <stdlib.h>
-#include <time.h>
-#include <stdatomic.h>
-
-#include <pthread.h>
-
-#include <unistd.h>
-#include <sys/syscall.h>
+    #include <pthread.h>
+    #include <stdatomic.h>
+    #include <stdlib.h>
+    #include <sys/syscall.h>
+    #include <time.h>
+    #include <unistd.h>
 
 static void chrome_trace_consumer(snTracerEvent event, void *data);
 
-#define STRINGIFY(x) #x
+    #define STRINGIFY(x) #x
+
 const char *get_event_name(snTracerEventType type) {
     switch (type) {
         case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
@@ -39,18 +37,17 @@ const char *get_event_name(snTracerEventType type) {
     }
 }
 
-#define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
+    #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
 uint64_t time_now_hook(void *data) {
     (void)data;
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     return (uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
-} 
+}
 
 void time_sleep(uint32_t ms) {
-    struct timespec time = {.tv_sec = ms / 1000,
-        .tv_nsec = (ms % 1000) * 1000000};
+    struct timespec time = {.tv_sec = ms / 1000, .tv_nsec = (ms % 1000) * 1000000};
 
     nanosleep(&time, NULL);
 }
@@ -143,7 +140,8 @@ typedef struct {
 void *producer_thread(void *args) {
     ProducerArags *pa = args;
 
-    snTracerThreadBuffer *thread_buffer = sn_tracer_add_thread(pa->tracer, pa->buffer, pa->buffer_size, pa->mutex);
+    snTracerThreadBuffer *thread_buffer
+        = sn_tracer_add_thread(pa->tracer, pa->buffer, pa->buffer_size, pa->mutex);
 
     SN_TRACER_TRACE_METADATA(pa->tracer, thread_buffer, "thread_name", "producer");
 
@@ -179,7 +177,8 @@ typedef struct {
 void *consumer_thread(void *args) {
     ConsumerArags *ca = args;
 
-    snTracerThreadBuffer *thread_buffer = sn_tracer_add_thread(ca->tracer, ca->buffer, ca->buffer_size, ca->mutex);
+    snTracerThreadBuffer *thread_buffer
+        = sn_tracer_add_thread(ca->tracer, ca->buffer, ca->buffer_size, ca->mutex);
 
     SN_TRACER_TRACE_METADATA(ca->tracer, thread_buffer, "thread_name", "consumer");
 
@@ -221,8 +220,7 @@ int main(void) {
         // .consumer = consumer_hook,
         // .consumer_data = NULL
         .consumer = chrome_trace_consumer,
-        .consumer_data = file
-    };
+        .consumer_data = file};
 
     sn_tracer_init(&tracer, hooks);
     sn_tracer_enable(&tracer);
@@ -230,7 +228,8 @@ int main(void) {
     char main_buffer[1024];
     pthread_mutex_t main_mutex;
     pthread_mutex_init(&main_mutex, NULL);
-    snTracerThreadBuffer *thread_buffer = sn_tracer_add_thread(&tracer, main_buffer, ARRAY_LEN(main_buffer), &main_mutex);
+    snTracerThreadBuffer *thread_buffer
+        = sn_tracer_add_thread(&tracer, main_buffer, ARRAY_LEN(main_buffer), &main_mutex);
 
     SN_TRACER_TRACE_METADATA(&tracer, thread_buffer, "thread_name", "main");
 
@@ -238,13 +237,18 @@ int main(void) {
     pthread_mutex_t consumer_mutex;
     pthread_mutex_init(&consumer_mutex, NULL);
     char consumer_buffer[1024];
-    ConsumerArags ca = {.tracer = &tracer, .done = &done, .buffer = consumer_buffer, .buffer_size = ARRAY_LEN(consumer_buffer), .mutex = &consumer_mutex};
+    ConsumerArags ca
+        = {.tracer = &tracer,
+           .done = &done,
+           .buffer = consumer_buffer,
+           .buffer_size = ARRAY_LEN(consumer_buffer),
+           .mutex = &consumer_mutex};
     pthread_t consumer;
 
     pthread_create(&consumer, NULL, consumer_thread, &ca);
 
-#define NUM_PRODUCERS 4
-#define BUFFER_SIZE_PER_PRODUCER 1024
+    #define NUM_PRODUCERS 4
+    #define BUFFER_SIZE_PER_PRODUCER 1024
 
     char buffer[BUFFER_SIZE_PER_PRODUCER * NUM_PRODUCERS];
     pthread_mutex_t mutexes[NUM_PRODUCERS];
@@ -257,8 +261,7 @@ int main(void) {
             .tracer = &tracer,
             .buffer = &buffer[i * BUFFER_SIZE_PER_PRODUCER],
             .buffer_size = BUFFER_SIZE_PER_PRODUCER,
-            .mutex = &mutexes[i]
-        };
+            .mutex = &mutexes[i]};
 
         pthread_create(&producers[i], NULL, producer_thread, &pas[i]);
     }
@@ -279,7 +282,7 @@ int main(void) {
     pthread_mutex_destroy(&main_mutex);
     pthread_rwlock_destroy(&read_write_lock);
 
-    fprintf(file, "{} ] }\n"); // Dummy to avoid trailing comma
+    fprintf(file, "{} ] }\n");  // Dummy to avoid trailing comma
     fclose(file);
 }
 
@@ -287,90 +290,68 @@ static void chrome_trace_consumer(snTracerEvent event, void *data) {
     FILE *file = (FILE *)data;
 
     switch (event.type) {
+        case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
+            fprintf(file,
+                    "{ \"name\": \"%s\", \"ph\": \"B\", \"ts\": %llu, "
+                    "\"pid\": 0, \"tid\": %llu },\n",
+                    event.scope_begin.name, (unsigned long long)event.timestamp,
+                    (unsigned long long)event.thread_id);
+            break;
 
-    case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
-        fprintf(file,
-            "{ \"name\": \"%s\", \"ph\": \"B\", \"ts\": %llu, "
-            "\"pid\": 0, \"tid\": %llu },\n",
-            event.scope_begin.name,
-            (unsigned long long)event.timestamp,
-            (unsigned long long)event.thread_id
-        );
-        break;
+        case SN_TRACER_EVENT_TYPE_SCOPE_END:
+            fprintf(file,
+                    "{ \"ph\": \"E\", \"ts\": %llu, "
+                    "\"pid\": 0, \"tid\": %llu },\n",
+                    (unsigned long long)event.timestamp, (unsigned long long)event.thread_id);
+            break;
 
-    case SN_TRACER_EVENT_TYPE_SCOPE_END:
-        fprintf(file,
-            "{ \"ph\": \"E\", \"ts\": %llu, "
-            "\"pid\": 0, \"tid\": %llu },\n",
-            (unsigned long long)event.timestamp,
-            (unsigned long long)event.thread_id
-        );
-        break;
+        case SN_TRACER_EVENT_TYPE_INSTANT:
+            fprintf(file,
+                    "{ \"name\": \"%s\", \"ph\": \"i\", \"ts\": %llu, "
+                    "\"pid\": 0, \"tid\": %llu, \"s\": \"t\" },\n",
+                    event.instant.name, (unsigned long long)event.timestamp,
+                    (unsigned long long)event.thread_id);
+            break;
 
-    case SN_TRACER_EVENT_TYPE_INSTANT:
-        fprintf(file,
-            "{ \"name\": \"%s\", \"ph\": \"i\", \"ts\": %llu, "
-            "\"pid\": 0, \"tid\": %llu, \"s\": \"t\" },\n",
-            event.instant.name,
-            (unsigned long long)event.timestamp,
-            (unsigned long long)event.thread_id
-        );
-        break;
+        case SN_TRACER_EVENT_TYPE_COUNTER:
+            fprintf(file,
+                    "{ \"name\": \"%s\", \"ph\": \"C\", \"ts\": %llu, "
+                    "\"pid\": 0, \"tid\": %llu, \"args\": { \"value\": %lld } },\n",
+                    event.counter.name, (unsigned long long)event.timestamp,
+                    (unsigned long long)event.thread_id, (long long)event.counter.value);
+            break;
 
-    case SN_TRACER_EVENT_TYPE_COUNTER:
-        fprintf(file,
-            "{ \"name\": \"%s\", \"ph\": \"C\", \"ts\": %llu, "
-            "\"pid\": 0, \"tid\": %llu, \"args\": { \"value\": %lld } },\n",
-            event.counter.name,
-            (unsigned long long)event.timestamp,
-            (unsigned long long)event.thread_id,
-            (long long)event.counter.value
-        );
-        break;
+        case SN_TRACER_EVENT_TYPE_FLOW_BEGIN:
+            fprintf(file,
+                    "{ \"name\": \"%s\", \"ph\": \"s\", \"ts\": %llu, "
+                    "\"pid\": 0, \"tid\": %llu, \"id\": %llu },\n",
+                    event.flow.name, (unsigned long long)event.timestamp,
+                    (unsigned long long)event.thread_id, (unsigned long long)event.flow.id);
+            break;
 
-    case SN_TRACER_EVENT_TYPE_FLOW_BEGIN:
-        fprintf(file,
-            "{ \"name\": \"%s\", \"ph\": \"s\", \"ts\": %llu, "
-            "\"pid\": 0, \"tid\": %llu, \"id\": %llu },\n",
-            event.flow.name,
-            (unsigned long long)event.timestamp,
-            (unsigned long long)event.thread_id,
-            (unsigned long long)event.flow.id
-        );
-        break;
+        case SN_TRACER_EVENT_TYPE_FLOW_STEP:
+            fprintf(file,
+                    "{ \"name\": \"%s\", \"ph\": \"t\", \"ts\": %llu, "
+                    "\"pid\": 0, \"tid\": %llu, \"id\": %llu },\n",
+                    event.flow.name, (unsigned long long)event.timestamp,
+                    (unsigned long long)event.thread_id, (unsigned long long)event.flow.id);
+            break;
 
-    case SN_TRACER_EVENT_TYPE_FLOW_STEP:
-        fprintf(file,
-            "{ \"name\": \"%s\", \"ph\": \"t\", \"ts\": %llu, "
-            "\"pid\": 0, \"tid\": %llu, \"id\": %llu },\n",
-            event.flow.name,
-            (unsigned long long)event.timestamp,
-            (unsigned long long)event.thread_id,
-            (unsigned long long)event.flow.id
-        );
-        break;
+        case SN_TRACER_EVENT_TYPE_FLOW_END:
+            fprintf(file,
+                    "{ \"name\": \"%s\", \"ph\": \"f\", \"ts\": %llu, "
+                    "\"pid\": 0, \"tid\": %llu, \"id\": %llu },\n",
+                    event.flow.name, (unsigned long long)event.timestamp,
+                    (unsigned long long)event.thread_id, (unsigned long long)event.flow.id);
+            break;
 
-    case SN_TRACER_EVENT_TYPE_FLOW_END:
-        fprintf(file,
-            "{ \"name\": \"%s\", \"ph\": \"f\", \"ts\": %llu, "
-            "\"pid\": 0, \"tid\": %llu, \"id\": %llu },\n",
-            event.flow.name,
-            (unsigned long long)event.timestamp,
-            (unsigned long long)event.thread_id,
-            (unsigned long long)event.flow.id
-        );
-        break;
-
-    case SN_TRACER_EVENT_TYPE_METADATA:
-        fprintf(file,
-            "{ \"name\": \"%s\", \"ph\": \"M\", "
-            "\"pid\": 0, \"tid\": %llu, \"args\": { \"%s\": \"%s\" } },\n",
-            event.metadata.name,
-            (unsigned long long)event.thread_id,
-            event.metadata.name,
-            event.metadata.value
-        );
-        break;
+        case SN_TRACER_EVENT_TYPE_METADATA:
+            fprintf(file,
+                    "{ \"name\": \"%s\", \"ph\": \"M\", "
+                    "\"pid\": 0, \"tid\": %llu, \"args\": { \"%s\": \"%s\" } },\n",
+                    event.metadata.name, (unsigned long long)event.thread_id, event.metadata.name,
+                    event.metadata.value);
+            break;
     }
 }
 

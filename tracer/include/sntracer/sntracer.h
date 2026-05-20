@@ -1,8 +1,7 @@
 #pragma once
 
-#include "sntracer/defines.h"
-
 #include "sntracer/api.h"
+#include "sntracer/defines.h"
 
 /**
  * @enum snTracerEventType
@@ -96,6 +95,7 @@ typedef struct snTracerMetadataPayload {
  */
 typedef struct snTracerEvent {
     uint64_t timestamp;
+
     union {
         snTracerScopeBeginPayload scope_begin;
         snTracerInstantPayload instant;
@@ -103,10 +103,10 @@ typedef struct snTracerEvent {
         snTracerFlowPayload flow;
         snTracerMetadataPayload metadata;
     };
+
     snTracerEventType type;
     uint64_t thread_id;
 } snTracerEvent;
-
 
 /**
  * @brief Get the current timestamp.
@@ -223,13 +223,12 @@ typedef struct snTracerThreadBuffer {
     int64_t thread_id;
 } snTracerThreadBuffer;
 
-
 /**
  * @struct snTracer
  * @brief Tracing context.
  */
 typedef struct snTracer {
-    snTracerThreadBuffer *thread_buffer; // This uses read_write_lock
+    snTracerThreadBuffer *thread_buffer;  // This uses read_write_lock
 
     snTracerHooks hooks;
     snTracerThreadBuffer *process_buffer;
@@ -244,6 +243,7 @@ typedef struct snTracer {
  */
 typedef struct snTracerEventRecord {
     snTracerEventHeader *header;
+
     union {
         snTracerScopeBeginPayload *scope_begin;
         snTracerInstantPayload *instant;
@@ -252,7 +252,6 @@ typedef struct snTracerEventRecord {
         snTracerMetadataPayload *metadata;
     };
 } snTracerEventRecord;
-
 
 /**
  * @brief Initializes a tracer.
@@ -265,12 +264,7 @@ typedef struct snTracerEventRecord {
 SN_INLINE bool sn_tracer_init(snTracer *tracer, snTracerHooks hooks) {
     if (!hooks.time_now || !hooks.thread_id) return false;
 
-    *tracer = (snTracer) {
-        .thread_buffer = NULL,
-        .hooks = hooks,
-        .enabled = false,
-        .process_buffer = NULL
-    };
+    *tracer = (snTracer){.thread_buffer = NULL, .hooks = hooks, .enabled = false, .process_buffer = NULL};
 
     return true;
 }
@@ -320,7 +314,7 @@ SN_API size_t sn_tracer_process_n(snTracer *tracer, size_t n);
  * @param tracer Tracer instance.
  * @param thread_buffer The thread buffer
  * @param n Number of events to process.
- * 
+ *
  * @return Returns number of events processed.
  */
 SN_API size_t sn_tracer_process_thread_buffer_n(snTracer *tracer, snTracerThreadBuffer *thread_buffer, size_t n);
@@ -358,7 +352,8 @@ SN_FORCE_INLINE size_t sn_tracer_process_thread_buffer(snTracer *tracer, snTrace
  *
  * @return Pointer to initialized thread buffer.
  */
-SN_API snTracerThreadBuffer *sn_tracer_add_thread(snTracer *tracer, void *buffer, size_t buffer_size, void *thread_lock);
+SN_API snTracerThreadBuffer *
+    sn_tracer_add_thread(snTracer *tracer, void *buffer, size_t buffer_size, void *thread_lock);
 
 /**
  * @brief Flushes and deinitializes the tracer.
@@ -380,7 +375,8 @@ SN_INLINE void sn_tracer_deinit(snTracer *tracer) {
  *
  * @return Returns the event record.
  */
-SN_API snTracerEventRecord sn_tracer_event_begin(snTracer *tracer, snTracerThreadBuffer *thread_buffer, snTracerEventType type);
+SN_API snTracerEventRecord sn_tracer_event_begin(
+    snTracer *tracer, snTracerThreadBuffer *thread_buffer, snTracerEventType type);
 
 /**
  * @brief Finalizes an event record.
@@ -393,8 +389,9 @@ SN_API void sn_tracer_event_commit(snTracer *tracer, snTracerThreadBuffer *threa
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_SCOPE_BEGIN macro.
  */
-SN_API void sn_tracer_trace_scope_begin(snTracer *tracer, snTracerThreadBuffer *thread_buffer,
-        const char *name, const char *func, const char *file, uint32_t line);
+SN_API void sn_tracer_trace_scope_begin(
+    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, const char *func,
+    const char *file, uint32_t line);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_SCOPE_END macro.
@@ -405,41 +402,44 @@ SN_API void sn_tracer_trace_scope_end(snTracer *tracer, snTracerThreadBuffer *th
  * @brief Helper function, use @ref SN_TRACER_TRACE_INSTANT macro.
  */
 SN_API void sn_tracer_trace_instant(snTracer *tracer, snTracerThreadBuffer *thread_buffer,
-        const char *name, const char *func, const char *file, uint32_t line);
+                                    const char *name, const char *func, const char *file, uint32_t line);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_COUNTER macro.
  */
-SN_API void sn_tracer_trace_counter(snTracer *tracer, snTracerThreadBuffer *thread_buffer,
-        const char *name, int64_t value);
+SN_API void sn_tracer_trace_counter(
+    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, int64_t value);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_FLOW_BEGIN macro.
  */
-SN_API void sn_tracer_trace_flow_begin(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
+SN_API void sn_tracer_trace_flow_begin(
+    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_FLOW_STEP macro.
  */
-SN_API void sn_tracer_trace_flow_step(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
+SN_API void sn_tracer_trace_flow_step(
+    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_FLOW_END macro.
  */
-SN_API void sn_tracer_trace_flow_end(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
+SN_API void sn_tracer_trace_flow_end(
+    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_METADATA macro.
  */
-SN_API void sn_tracer_trace_metadata(snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, const char *value);
-
+SN_API void sn_tracer_trace_metadata(
+    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, const char *value);
 
 #ifdef SN_TRACER_ENABLE
     /**
      * @note All the name passed to sntracer should be static or literals.
      *      They must outlive the tracer.
      */
-    #define SN_TRACER_TRACE_SCOPE_BEGIN(tracer, thread_buffer, name) \
+    #define SN_TRACER_TRACE_SCOPE_BEGIN(tracer, thread_buffer, name)                           \
         sn_tracer_trace_scope_begin(tracer, thread_buffer, name, __func__, __FILE__, __LINE__)
 
     /**
@@ -449,8 +449,8 @@ SN_API void sn_tracer_trace_metadata(snTracer *tracer, snTracerThreadBuffer *thr
     #define SN_TRACER_TRACE_SCOPE_END(tracer, thread_buffer) \
         sn_tracer_trace_scope_end(tracer, thread_buffer)
 
-    // Should not use return, goto, break inside the scope, if early exit is required, use continue to come out first
-    // Also should not call sn_tracer_disable within the scope
+    // Should not use return, goto, break inside the scope, if early exit is required, use continue
+    // to come out first Also should not call sn_tracer_disable within the scope
     /**
      * @brief Scoped tracing macro.
      *
@@ -460,15 +460,16 @@ SN_API void sn_tracer_trace_metadata(snTracer *tracer, snTracerThreadBuffer *thr
      * @note All the name passed to sntracer should be static or literals.
      *      They must outlive the tracer.
      */
-    #define SN_TRACER_TRACE_SCOPE(tracer, thread_buffer, name) \
-        for (bool once = (sn_tracer_trace_scope_begin(tracer, thread_buffer, name, __func__, __FILE__, __LINE__), true); \
-                once; once = (sn_tracer_trace_scope_end(tracer, thread_buffer), false))
+    #define SN_TRACER_TRACE_SCOPE(tracer, thread_buffer, name)                                                 \
+        for (bool once                                                                                         \
+             = (sn_tracer_trace_scope_begin(tracer, thread_buffer, name, __func__, __FILE__, __LINE__), true); \
+             once; once = (sn_tracer_trace_scope_end(tracer, thread_buffer), false))
 
     /**
      * @note All the name passed to sntracer should be static or literals.
      *      They must outlive the tracer.
      */
-    #define SN_TRACER_TRACE_INSTANT(tracer, thread_buffer, name) \
+    #define SN_TRACER_TRACE_INSTANT(tracer, thread_buffer, name)                           \
         sn_tracer_trace_instant(tracer, thread_buffer, name, __func__, __FILE__, __LINE__)
 
     /**
