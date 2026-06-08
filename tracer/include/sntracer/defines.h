@@ -17,7 +17,11 @@
 
 #define SN_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
 
-#define SN_ASSERT(x) assert(x)
+#if defined(SN_DEBUG)
+    #define SN_ASSERT(x) assert(x)
+#else
+    #define SN_ASSERT(x) SN_UNUSED(x)
+#endif
 
 #define SN_SHOULD_NOT_REACH_HERE (SN_ASSERT(false))
 
