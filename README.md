@@ -38,9 +38,9 @@ SnTracer uses one buffer per thread.
 
 ### Initialization
 ```c
-snTracer tracer;
+SnTracer tracer;
 
-snTracerHooks hooks = {
+SnTracerHooks hooks = {
     .time_now = my_time_now,
     .thread_id = my_thread_id,
     .mutex_lock = my_mutex_lock,
@@ -105,12 +105,12 @@ sn_tracer_process_n(&tracer, 128);
 
 Processing:
 - Reads events in order
-- Converts them to snTracerEvent
+- Converts them to SnTracerEvent
 - Calls the user-provided consumer
 
 ### Event Consumer
 ```c
-void my_event_consumer(snTracerEvent event, void *data) {
+void my_event_consumer(SnTracerEvent event, void *data) {
     // write to file
     // stream over socket
     // convert to Chrome Trace JSON

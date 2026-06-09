@@ -12,11 +12,11 @@
     #include <time.h>
     #include <unistd.h>
 
-static void chrome_trace_consumer(snTracerEvent event, void *data);
+static void chrome_trace_consumer(SnTracerEvent event, void *data);
 
     #define STRINGIFY(x) #x
 
-const char *get_event_name(snTracerEventType type) {
+const char *get_event_name(SnTracerEventType type) {
     switch (type) {
         case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
             return STRINGIFY(SN_TRACER_EVENT_TYPE_SCOPE_BEGIN);
@@ -87,7 +87,7 @@ void write_unlock_hook(void *data) {
     pthread_rwlock_unlock(rwlock);
 }
 
-void consumer_hook(snTracerEvent event, void *data) {
+void consumer_hook(SnTracerEvent event, void *data) {
     (void)data;
     printf("timestamp = %ld, ", event.timestamp);
     printf("thread_id = %ld, ", event.thread_id);
@@ -131,7 +131,7 @@ void consumer_hook(snTracerEvent event, void *data) {
 }
 
 typedef struct {
-    snTracer *tracer;
+    SnTracer *tracer;
     void *buffer;
     size_t buffer_size;
     pthread_mutex_t *mutex;
@@ -140,7 +140,7 @@ typedef struct {
 void *producer_thread(void *args) {
     ProducerArags *pa = args;
 
-    snTracerThreadBuffer *thread_buffer
+    SnTracerThreadBuffer *thread_buffer
         = sn_tracer_add_thread(pa->tracer, pa->buffer, pa->buffer_size, pa->mutex);
 
     SN_TRACER_TRACE_METADATA(pa->tracer, thread_buffer, "thread_name", "producer");
@@ -167,7 +167,7 @@ void *producer_thread(void *args) {
 }
 
 typedef struct {
-    snTracer *tracer;
+    SnTracer *tracer;
     atomic_int *done;
     void *buffer;
     size_t buffer_size;
@@ -177,7 +177,7 @@ typedef struct {
 void *consumer_thread(void *args) {
     ConsumerArags *ca = args;
 
-    snTracerThreadBuffer *thread_buffer
+    SnTracerThreadBuffer *thread_buffer
         = sn_tracer_add_thread(ca->tracer, ca->buffer, ca->buffer_size, ca->mutex);
 
     SN_TRACER_TRACE_METADATA(ca->tracer, thread_buffer, "thread_name", "consumer");
@@ -192,7 +192,7 @@ void *consumer_thread(void *args) {
 }
 
 int main(void) {
-    snTracer tracer;
+    SnTracer tracer;
 
     pthread_rwlock_t read_write_lock;
     pthread_rwlock_init(&read_write_lock, NULL);
@@ -201,7 +201,7 @@ int main(void) {
     if (!file) exit(EXIT_FAILURE);
     fprintf(file, "{ \"traceEvents\": [\n");
 
-    snTracerHooks hooks = {
+    SnTracerHooks hooks = {
         .time_now = time_now_hook,
         .time_data = NULL,
 
@@ -228,7 +228,7 @@ int main(void) {
     char main_buffer[1024];
     pthread_mutex_t main_mutex;
     pthread_mutex_init(&main_mutex, NULL);
-    snTracerThreadBuffer *thread_buffer
+    SnTracerThreadBuffer *thread_buffer
         = sn_tracer_add_thread(&tracer, main_buffer, ARRAY_LEN(main_buffer), &main_mutex);
 
     SN_TRACER_TRACE_METADATA(&tracer, thread_buffer, "thread_name", "main");
@@ -286,7 +286,7 @@ int main(void) {
     fclose(file);
 }
 
-static void chrome_trace_consumer(snTracerEvent event, void *data) {
+static void chrome_trace_consumer(SnTracerEvent event, void *data) {
     FILE *file = (FILE *)data;
 
     switch (event.type) {

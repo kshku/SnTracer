@@ -4,14 +4,14 @@
 #include "sntracer/defines.h"
 
 /**
- * @enum snTracerEventType
+ * @enum SnTracerEventType
  * @brief Type of a tracing event.
  *
  * Some event types carry payload data, others do not.
  * The tracer internally reserves high bits of this value
  * for event validity tracking.
  */
-typedef enum snTracerEventType {
+typedef enum SnTracerEventType {
     SN_TRACER_EVENT_TYPE_SCOPE_BEGIN, /**< Marks the beginning of a scoped region */
     SN_TRACER_EVENT_TYPE_SCOPE_END, /**< Marks the end of a scoped region */
     SN_TRACER_EVENT_TYPE_INSTANT, /**< A single point in time event */
@@ -20,93 +20,93 @@ typedef enum snTracerEventType {
     SN_TRACER_EVENT_TYPE_FLOW_STEP, /**< Flow event: step */
     SN_TRACER_EVENT_TYPE_FLOW_END, /**< Flow event: end */
     SN_TRACER_EVENT_TYPE_METADATA, /**< Metadata event */
-} snTracerEventType;
+} SnTracerEventType;
 
 /**
- * @struct snTracerEventHeader
+ * @struct SnTracerEventHeader
  * @brief Common header stored for every event.
  *
  * The tracer may temporarily mark an event as incomplete
  * using internal bits of the type field.
  */
-typedef struct snTracerEventHeader {
+typedef struct SnTracerEventHeader {
     uint64_t timestamp;
-    snTracerEventType type;
-} snTracerEventHeader;
+    SnTracerEventType type;
+} SnTracerEventHeader;
 
 /**
- * @struct snTracerScopeBeginPayload
+ * @struct SnTracerScopeBeginPayload
  * @brief Payload for scope-begin events.
  *
  * All string pointers must remain valid for the lifetime
  * of the tracing session (string literals recommended).
  */
-typedef struct snTracerScopeBeginPayload {
+typedef struct SnTracerScopeBeginPayload {
     const char *name;
     const char *func;
     const char *file;
     uint32_t line;
-} snTracerScopeBeginPayload;
+} SnTracerScopeBeginPayload;
 
 /**
- * @struct snTracerInstantPayload
+ * @struct SnTracerInstantPayload
  * @brief Payload for instant events.
  */
-typedef struct snTracerInstantPayload {
+typedef struct SnTracerInstantPayload {
     const char *name;
     const char *func;
     const char *file;
     uint32_t line;
-} snTracerInstantPayload;
+} SnTracerInstantPayload;
 
 /**
- * @struct snTracerCounterPayload
+ * @struct SnTracerCounterPayload
  * @brief Payload for counter events.
  */
-typedef struct snTracerCounterPayload {
+typedef struct SnTracerCounterPayload {
     const char *name;
     int64_t value;
-} snTracerCounterPayload;
+} SnTracerCounterPayload;
 
 /**
- * @struct snTracerFlowPayload
+ * @struct SnTracerFlowPayload
  * @brief Payload for flow events.
  */
-typedef struct snTracerFlowPayload {
+typedef struct SnTracerFlowPayload {
     const char *name;
     uint64_t id;
-} snTracerFlowPayload;
+} SnTracerFlowPayload;
 
 /**
- * @struct snTracerMetadataPayload.
+ * @struct SnTracerMetadataPayload.
  * @brief Payload for metadata events.
  */
-typedef struct snTracerMetadataPayload {
+typedef struct SnTracerMetadataPayload {
     const char *name;
     const char *value;
-} snTracerMetadataPayload;
+} SnTracerMetadataPayload;
 
 /**
- * @struct snTracerEvent
+ * @struct SnTracerEvent
  * @brief Fully reconstructed event delivered to consumers.
  *
  * This structure is never written directly into buffers.
  * It is assembled during processing and passed to the consumer callback.
  */
-typedef struct snTracerEvent {
+typedef struct SnTracerEvent {
     uint64_t timestamp;
 
     union {
-        snTracerScopeBeginPayload scope_begin;
-        snTracerInstantPayload instant;
-        snTracerCounterPayload counter;
-        snTracerFlowPayload flow;
-        snTracerMetadataPayload metadata;
+        SnTracerScopeBeginPayload scope_begin;
+        SnTracerInstantPayload instant;
+        SnTracerCounterPayload counter;
+        SnTracerFlowPayload flow;
+        SnTracerMetadataPayload metadata;
     };
 
-    snTracerEventType type;
+    SnTracerEventType type;
     uint64_t thread_id;
-} snTracerEvent;
+} SnTracerEvent;
 
 /**
  * @brief Get the current timestamp.
@@ -115,7 +115,7 @@ typedef struct snTracerEvent {
  *
  * @return Returns timestamp.
  */
-typedef uint64_t (*snGetCurrentTimeFn)(void *data);
+typedef uint64_t (*SnGetCurrentTimeFn)(void *data);
 
 /**
  * @brief Get the current thread ID.
@@ -124,49 +124,49 @@ typedef uint64_t (*snGetCurrentTimeFn)(void *data);
  *
  * @return Returns the thread id.
  */
-typedef uint64_t (*snGetCurrentThreadIdFn)(void *data);
+typedef uint64_t (*SnGetCurrentThreadIdFn)(void *data);
 
 /**
  * @brief Per-thread mutex lock.
  *
  * @param data The user data.
  */
-typedef void (*snMutexLockFn)(void *data);
+typedef void (*SnMutexLockFn)(void *data);
 
 /**
  * @brief Per-thread mutex unlock.
  *
  * @param data The user data.
  */
-typedef void (*snMutexUnlockFn)(void *data);
+typedef void (*SnMutexUnlockFn)(void *data);
 
 /**
  * @brief Read lock for global tracer state.
  *
  * @param data The user data.
  */
-typedef void (*snReadLockFn)(void *data);
+typedef void (*SnReadLockFn)(void *data);
 
 /**
  * @brief Read unlock for global tracer state.
  *
  * @param data The user data.
  */
-typedef void (*snReadUnlockFn)(void *data);
+typedef void (*SnReadUnlockFn)(void *data);
 
 /**
  * @brief Write lock for global tracer state.
  *
  * @param data The user data.
  */
-typedef void (*snWriteLockFn)(void *data);
+typedef void (*SnWriteLockFn)(void *data);
 
 /**
  * @brief Write unlock for global tracer state.
  *
  * @param data The user data.
  */
-typedef void (*snWriteUnlockFn)(void *data);
+typedef void (*SnWriteUnlockFn)(void *data);
 
 /**
  * @brief Consumes processed tracing events.
@@ -174,10 +174,10 @@ typedef void (*snWriteUnlockFn)(void *data);
  * @param event The event.
  * @param data The user data.
  */
-typedef void (*snTracerEventConsumer)(snTracerEvent event, void *data);
+typedef void (*SnTracerEventConsumer)(SnTracerEvent event, void *data);
 
 /**
- * @struct snTracerHooks
+ * @struct SnTracerHooks
  * @brief Collection of user-provided hooks.
  *
  * Required hooks:
@@ -186,72 +186,72 @@ typedef void (*snTracerEventConsumer)(snTracerEvent event, void *data);
  *
  * All locking hooks are optional.
  */
-typedef struct snTracerHooks {
-    snGetCurrentTimeFn time_now; /**< Timestamp provider */
+typedef struct SnTracerHooks {
+    SnGetCurrentTimeFn time_now; /**< Timestamp provider */
     void *time_data;
 
-    snGetCurrentThreadIdFn thread_id; /**< Thread id provider */
+    SnGetCurrentThreadIdFn thread_id; /**< Thread id provider */
     void *thread_data;
 
-    snMutexLockFn mutex_lock; /**< Per thread lock */
-    snMutexUnlockFn mutex_unlock;
+    SnMutexLockFn mutex_lock; /**< Per thread lock */
+    SnMutexUnlockFn mutex_unlock;
 
-    snReadLockFn read_lock; /**< Global read lock */
-    snReadUnlockFn read_unlock;
-    snWriteLockFn write_lock; /**< Global write lock */
-    snWriteUnlockFn write_unlock;
+    SnReadLockFn read_lock; /**< Global read lock */
+    SnReadUnlockFn read_unlock;
+    SnWriteLockFn write_lock; /**< Global write lock */
+    SnWriteUnlockFn write_unlock;
     void *read_write_lock;
 
-    snTracerEventConsumer consumer; /**< Event consumer callback */
+    SnTracerEventConsumer consumer; /**< Event consumer callback */
     void *consumer_data;
-} snTracerHooks;
+} SnTracerHooks;
 
 /**
- * @struct snTracerThreadBuffer
+ * @struct SnTracerThreadBuffer
  * @brief Per-thread ring buffer for tracing events.
  *
  * Each thread that emits events must register one buffer.
  * The buffer memory must outlive all events written to it.
  */
-typedef struct snTracerThreadBuffer {
+typedef struct SnTracerThreadBuffer {
     size_t buffer_size;
     size_t write_offset;
     size_t read_offset;
     size_t dropped;
-    struct snTracerThreadBuffer *next;
+    struct SnTracerThreadBuffer *next;
     void *thread_lock;
     int64_t thread_id;
-} snTracerThreadBuffer;
+} SnTracerThreadBuffer;
 
 /**
- * @struct snTracer
+ * @struct SnTracer
  * @brief Tracing context.
  */
-typedef struct snTracer {
-    snTracerThreadBuffer *thread_buffer;  // This uses read_write_lock
+typedef struct SnTracer {
+    SnTracerThreadBuffer *thread_buffer;  // This uses read_write_lock
 
-    snTracerHooks hooks;
-    snTracerThreadBuffer *process_buffer;
+    SnTracerHooks hooks;
+    SnTracerThreadBuffer *process_buffer;
     bool enabled;
-} snTracer;
+} SnTracer;
 
 /**
- * @struct snTracerEventRecord
+ * @struct SnTracerEventRecord
  * @brief Handle returned by event_begin and finalized by event_commit.
  *
  * This is an internal construction helper, not a public event.
  */
-typedef struct snTracerEventRecord {
-    snTracerEventHeader *header;
+typedef struct SnTracerEventRecord {
+    SnTracerEventHeader *header;
 
     union {
-        snTracerScopeBeginPayload *scope_begin;
-        snTracerInstantPayload *instant;
-        snTracerCounterPayload *counter;
-        snTracerFlowPayload *flow;
-        snTracerMetadataPayload *metadata;
+        SnTracerScopeBeginPayload *scope_begin;
+        SnTracerInstantPayload *instant;
+        SnTracerCounterPayload *counter;
+        SnTracerFlowPayload *flow;
+        SnTracerMetadataPayload *metadata;
     };
-} snTracerEventRecord;
+} SnTracerEventRecord;
 
 /**
  * @brief Initializes a tracer.
@@ -261,10 +261,10 @@ typedef struct snTracerEventRecord {
  *
  * @return true on success, false if required hooks are missing.
  */
-SN_INLINE bool sn_tracer_init(snTracer *tracer, snTracerHooks hooks) {
+SN_INLINE bool sn_tracer_init(SnTracer *tracer, SnTracerHooks hooks) {
     if (!hooks.time_now || !hooks.thread_id) return false;
 
-    *tracer = (snTracer){.thread_buffer = NULL, .hooks = hooks, .enabled = false, .process_buffer = NULL};
+    *tracer = (SnTracer){.thread_buffer = NULL, .hooks = hooks, .enabled = false, .process_buffer = NULL};
 
     return true;
 }
@@ -274,7 +274,7 @@ SN_INLINE bool sn_tracer_init(snTracer *tracer, snTracerHooks hooks) {
  *
  * @param tracer Tracer instance.
  */
-SN_FORCE_INLINE void sn_tracer_enable(snTracer *tracer) {
+SN_FORCE_INLINE void sn_tracer_enable(SnTracer *tracer) {
     tracer->enabled = true;
 }
 
@@ -283,7 +283,7 @@ SN_FORCE_INLINE void sn_tracer_enable(snTracer *tracer) {
  *
  * @param tracer Tracer instance.
  */
-SN_FORCE_INLINE void sn_tracer_disable(snTracer *tracer) {
+SN_FORCE_INLINE void sn_tracer_disable(SnTracer *tracer) {
     tracer->enabled = false;
 }
 
@@ -294,7 +294,7 @@ SN_FORCE_INLINE void sn_tracer_disable(snTracer *tracer) {
  *
  * @return Returns true if enabled, else false.
  */
-SN_FORCE_INLINE bool sn_tracer_is_enabled(snTracer *tracer) {
+SN_FORCE_INLINE bool sn_tracer_is_enabled(SnTracer *tracer) {
     return tracer->enabled;
 }
 
@@ -306,7 +306,7 @@ SN_FORCE_INLINE bool sn_tracer_is_enabled(snTracer *tracer) {
  *
  * @return Returns number of events processed.
  */
-SN_API size_t sn_tracer_process_n(snTracer *tracer, size_t n);
+SN_API size_t sn_tracer_process_n(SnTracer *tracer, size_t n);
 
 /**
  * @brief Processes up to @p n events from a specific buffer.
@@ -317,7 +317,7 @@ SN_API size_t sn_tracer_process_n(snTracer *tracer, size_t n);
  *
  * @return Returns number of events processed.
  */
-SN_API size_t sn_tracer_process_thread_buffer_n(snTracer *tracer, snTracerThreadBuffer *thread_buffer, size_t n);
+SN_API size_t sn_tracer_process_thread_buffer_n(SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, size_t n);
 
 /**
  * @brief Processes all available events.
@@ -326,7 +326,7 @@ SN_API size_t sn_tracer_process_thread_buffer_n(snTracer *tracer, snTracerThread
  *
  * @return Returns number of events processed.
  */
-SN_FORCE_INLINE size_t sn_tracer_process(snTracer *tracer) {
+SN_FORCE_INLINE size_t sn_tracer_process(SnTracer *tracer) {
     return sn_tracer_process_n(tracer, -1);
 }
 
@@ -338,7 +338,7 @@ SN_FORCE_INLINE size_t sn_tracer_process(snTracer *tracer) {
  *
  * @return Returns number of events processed.
  */
-SN_FORCE_INLINE size_t sn_tracer_process_thread_buffer(snTracer *tracer, snTracerThreadBuffer *thread_buffer) {
+SN_FORCE_INLINE size_t sn_tracer_process_thread_buffer(SnTracer *tracer, SnTracerThreadBuffer *thread_buffer) {
     return sn_tracer_process_thread_buffer_n(tracer, thread_buffer, -1);
 }
 
@@ -352,18 +352,18 @@ SN_FORCE_INLINE size_t sn_tracer_process_thread_buffer(snTracer *tracer, snTrace
  *
  * @return Pointer to initialized thread buffer.
  */
-SN_API snTracerThreadBuffer *
-    sn_tracer_add_thread(snTracer *tracer, void *buffer, size_t buffer_size, void *thread_lock);
+SN_API SnTracerThreadBuffer *
+    sn_tracer_add_thread(SnTracer *tracer, void *buffer, size_t buffer_size, void *thread_lock);
 
 /**
  * @brief Flushes and deinitializes the tracer.
  *
  * @param tracer Tracer instance.
  */
-SN_INLINE void sn_tracer_deinit(snTracer *tracer) {
+SN_INLINE void sn_tracer_deinit(SnTracer *tracer) {
     while (sn_tracer_process(tracer));
 
-    *tracer = (snTracer){0};
+    *tracer = (SnTracer){0};
 }
 
 /**
@@ -375,8 +375,8 @@ SN_INLINE void sn_tracer_deinit(snTracer *tracer) {
  *
  * @return Returns the event record.
  */
-SN_API snTracerEventRecord sn_tracer_event_begin(
-    snTracer *tracer, snTracerThreadBuffer *thread_buffer, snTracerEventType type);
+SN_API SnTracerEventRecord sn_tracer_event_begin(
+    SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, SnTracerEventType type);
 
 /**
  * @brief Finalizes an event record.
@@ -384,55 +384,55 @@ SN_API snTracerEventRecord sn_tracer_event_begin(
  * @param tracer Tracer instance.
  * @param record The event record.
  */
-SN_API void sn_tracer_event_commit(snTracer *tracer, snTracerThreadBuffer *thread_buffer, snTracerEventRecord record);
+SN_API void sn_tracer_event_commit(SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, SnTracerEventRecord record);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_SCOPE_BEGIN macro.
  */
 SN_API void sn_tracer_trace_scope_begin(
-    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, const char *func,
+    SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, const char *name, const char *func,
     const char *file, uint32_t line);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_SCOPE_END macro.
  */
-SN_API void sn_tracer_trace_scope_end(snTracer *tracer, snTracerThreadBuffer *thread_buffer);
+SN_API void sn_tracer_trace_scope_end(SnTracer *tracer, SnTracerThreadBuffer *thread_buffer);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_INSTANT macro.
  */
-SN_API void sn_tracer_trace_instant(snTracer *tracer, snTracerThreadBuffer *thread_buffer,
+SN_API void sn_tracer_trace_instant(SnTracer *tracer, SnTracerThreadBuffer *thread_buffer,
                                     const char *name, const char *func, const char *file, uint32_t line);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_COUNTER macro.
  */
 SN_API void sn_tracer_trace_counter(
-    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, int64_t value);
+    SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, const char *name, int64_t value);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_FLOW_BEGIN macro.
  */
 SN_API void sn_tracer_trace_flow_begin(
-    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
+    SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_FLOW_STEP macro.
  */
 SN_API void sn_tracer_trace_flow_step(
-    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
+    SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_FLOW_END macro.
  */
 SN_API void sn_tracer_trace_flow_end(
-    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
+    SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, const char *name, uint64_t id);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_METADATA macro.
  */
 SN_API void sn_tracer_trace_metadata(
-    snTracer *tracer, snTracerThreadBuffer *thread_buffer, const char *name, const char *value);
+    SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, const char *name, const char *value);
 
 #ifdef SN_TRACER_ENABLE
     /**

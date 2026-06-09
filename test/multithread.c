@@ -11,7 +11,7 @@
 
     #define STRINGIFY(x) #x
 
-const char *get_event_name(snTracerEventType type) {
+const char *get_event_name(SnTracerEventType type) {
     switch (type) {
         case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
             return STRINGIFY(SN_TRACER_EVENT_TYPE_SCOPE_BEGIN);
@@ -82,7 +82,7 @@ void write_unlock_hook(void *data) {
     pthread_rwlock_unlock(rwlock);
 }
 
-void consumer_hook(snTracerEvent event, void *data) {
+void consumer_hook(SnTracerEvent event, void *data) {
     (void)data;
     printf("timestamp = %ld, ", event.timestamp);
     printf("thread_id = %ld, ", event.thread_id);
@@ -120,7 +120,7 @@ void consumer_hook(snTracerEvent event, void *data) {
 }
 
 typedef struct {
-    snTracer *tracer;
+    SnTracer *tracer;
     void *buffer;
     size_t buffer_size;
     pthread_mutex_t *mutex;
@@ -129,7 +129,7 @@ typedef struct {
 void *producer_thread(void *args) {
     ProducerArags *pa = args;
 
-    snTracerThreadBuffer *thread_buffer
+    SnTracerThreadBuffer *thread_buffer
         = sn_tracer_add_thread(pa->tracer, pa->buffer, pa->buffer_size, pa->mutex);
 
     for (int i = 0; i < 100; ++i) {
@@ -149,7 +149,7 @@ void *producer_thread(void *args) {
 }
 
 typedef struct {
-    snTracer *tracer;
+    SnTracer *tracer;
     atomic_int *done;
 } ConsumerArags;
 
@@ -166,12 +166,12 @@ void *consumer_thread(void *args) {
 }
 
 int main(void) {
-    snTracer tracer;
+    SnTracer tracer;
 
     pthread_rwlock_t read_write_lock;
     pthread_rwlock_init(&read_write_lock, NULL);
 
-    snTracerHooks hooks = {
+    SnTracerHooks hooks = {
         .time_now = time_now_hook,
         .time_data = NULL,
 

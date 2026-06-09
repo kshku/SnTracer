@@ -50,7 +50,7 @@ uint64_t thread_id_hook(void *data) {
 #endif
 }
 
-const char *get_event_name(snTracerEventType type) {
+const char *get_event_name(SnTracerEventType type) {
     switch (type) {
         case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
             return STRINGIFY(SN_TRACER_EVENT_TYPE_SCOPE_BEGIN);
@@ -73,7 +73,7 @@ const char *get_event_name(snTracerEventType type) {
     }
 }
 
-void consumer_hook(snTracerEvent event, void *data) {
+void consumer_hook(SnTracerEvent event, void *data) {
     (void)data;
     printf("timestamp = %ld, ", event.timestamp);
     printf("thread_id = %ld, ", event.thread_id);
@@ -111,9 +111,9 @@ void consumer_hook(snTracerEvent event, void *data) {
 }
 
 int main(void) {
-    snTracer tracer;
+    SnTracer tracer;
 
-    snTracerHooks hooks = {
+    SnTracerHooks hooks = {
         .time_now = time_now_hook,
         .thread_id = thread_id_hook,
         .consumer = consumer_hook,
@@ -122,7 +122,7 @@ int main(void) {
     sn_tracer_init(&tracer, hooks);
 
     char buffer[1024];
-    snTracerThreadBuffer *thread_buffer = sn_tracer_add_thread(&tracer, buffer, ARRAY_LEN(buffer), NULL);
+    SnTracerThreadBuffer *thread_buffer = sn_tracer_add_thread(&tracer, buffer, ARRAY_LEN(buffer), NULL);
 
     sn_tracer_enable(&tracer);
 
