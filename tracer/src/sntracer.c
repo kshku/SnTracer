@@ -37,12 +37,38 @@
 
 
 
+static void *ring_buffer_allocate(SnRingBufferAllocator *alloc, size_t size, size_t align) {
+    size += align;
+
+    uint64_t free = sn_ring_buffer_allocator_free_size(alloc);
+
+    if (free < size) return NULL;
+
+    if ((alloc->write_offset >= alloc->read_offset
+         && alloc->write_offset + size <= alloc->size)
+        || (alloc->write_offset < alloc->read_offset
+            && alloc->write_offset + size < alloc->read_offset)) {
+        void *p = (char *)alloc->buffer + alloc->write_offset;
+        void *aligned = (void *)SN_GET_ALIGNED(p, align);
+        alloc->write_offset += size - align + SN_PTR_DIFF(aligned, p);
+        return aligned;
+    }
+
+    if (alloc->write_offset >= alloc->read_offset && alloc->read_offset > size) {
+        void *aligned = (void *)SN_GET_ALIGNED(alloc->buffer, align);
+        alloc->write_offset = size - align + SN_PTR_DIFF(aligned, alloc->buffer);
+        return aligned;
+    }
+
+    return NULL;
+}
+
 SnTracerThreadBuffer *
     sn_tracer_add_thread(SnTracer *tracer, void *buffer, size_t buffer_size, void *thread_lock) {
     SnTracerThreadBuffer *thread_buffer = SN_GET_ALIGNED_PTR(buffer, SnTracerThreadBuffer);
-    buffer_size -= (size_t)SN_PTR_DIFF(thread_buffer, buffer);
-    size_t rb_size = buffer_size - sizeof(SnTracerThreadBuffer);
-    sn_ring_buffer_allocator_init(&thread_buffer->ring_buffer, (char *)(thread_buffer + 1), (uint64_t)rb_size);
+    buffer_size -= SN_PTR_DIFF(thread_buffer, buffer);
+    sn_ring_buffer_allocator_init(&thread_buffer->ring_buffer, (char *)(thread_buffer + 1),
+                                  (uint64_t)(buffer_size - sizeof(SnTracerThreadBuffer)));
     thread_buffer->dropped = 0;
     thread_buffer->thread_lock = thread_lock;
     thread_buffer->thread_id = sn_tracer_get_thread_id(tracer);
@@ -63,7 +89,7 @@ SnTracerEventRecord
     sn_tracer_lock_thread(tracer, thread_buffer);
 
 #define allocate_from_ring_buffer(type)                                      \
-    (type *)sn_ring_buffer_allocator_allocate(&thread_buffer->ring_buffer, sizeof(type), alignof(type))
+    (type *)ring_buffer_allocate(&thread_buffer->ring_buffer, sizeof(type), alignof(type))
     SnTracerEventRecord record = {0};
     uint64_t saved_write = thread_buffer->ring_buffer.write_offset;
     record.header = allocate_from_ring_buffer(SnTracerEventHeader);
@@ -94,7 +120,7 @@ SnTracerEventRecord
             break;
         case SN_TRACER_EVENT_TYPE_METADATA:
             record.metadata = allocate_from_ring_buffer(SnTracerMetadataPayload);
-            if (!record.flow) goto failed_payload_allocation;
+            if (!record.metadata) goto failed_payload_allocation;
             break;
         case SN_TRACER_EVENT_TYPE_SCOPE_END:
         default:
@@ -152,7 +178,7 @@ size_t sn_tracer_process_thread_buffer_n(SnTracer *tracer, SnTracerThreadBuffer 
     sn_tracer_lock_thread(tracer, thread_buffer);
 
     while (thread_buffer->ring_buffer.read_offset != thread_buffer->ring_buffer.write_offset && count < n) {
-        if (buffer_size - thread_buffer->ring_buffer.read_offset < sizeof(SnTracerEventHeader))
+        if (buffer_size - thread_buffer->ring_buffer.read_offset <= sizeof(SnTracerEventHeader))
             thread_buffer->ring_buffer.read_offset = 0;
 
         void *ptr = ring_buffer + thread_buffer->ring_buffer.read_offset;
@@ -185,7 +211,7 @@ size_t sn_tracer_process_thread_buffer_n(SnTracer *tracer, SnTracerThreadBuffer 
 
             switch (header->type) {
                 case SN_TRACER_EVENT_TYPE_SCOPE_BEGIN:
-                    if (buffer_size - thread_buffer->ring_buffer.read_offset < sizeof(SnTracerScopeBeginPayload)) {
+                    if (buffer_size - thread_buffer->ring_buffer.read_offset <= sizeof(SnTracerScopeBeginPayload)) {
                         thread_buffer->ring_buffer.read_offset = 0;
                         ptr = ring_buffer + thread_buffer->ring_buffer.read_offset;
                     }
@@ -194,7 +220,7 @@ size_t sn_tracer_process_thread_buffer_n(SnTracer *tracer, SnTracerThreadBuffer 
                     end_ptr = (void *)(payload_ptr.scope_begin + 1);
                     break;
                 case SN_TRACER_EVENT_TYPE_INSTANT:
-                    if (buffer_size - thread_buffer->ring_buffer.read_offset < sizeof(SnTracerInstantPayload)) {
+                    if (buffer_size - thread_buffer->ring_buffer.read_offset <= sizeof(SnTracerInstantPayload)) {
                         thread_buffer->ring_buffer.read_offset = 0;
                         ptr = ring_buffer + thread_buffer->ring_buffer.read_offset;
                     }
@@ -203,7 +229,7 @@ size_t sn_tracer_process_thread_buffer_n(SnTracer *tracer, SnTracerThreadBuffer 
                     end_ptr = (void *)(payload_ptr.instant + 1);
                     break;
                 case SN_TRACER_EVENT_TYPE_COUNTER:
-                    if (buffer_size - thread_buffer->ring_buffer.read_offset < sizeof(SnTracerCounterPayload)) {
+                    if (buffer_size - thread_buffer->ring_buffer.read_offset <= sizeof(SnTracerCounterPayload)) {
                         thread_buffer->ring_buffer.read_offset = 0;
                         ptr = ring_buffer + thread_buffer->ring_buffer.read_offset;
                     }
@@ -214,7 +240,7 @@ size_t sn_tracer_process_thread_buffer_n(SnTracer *tracer, SnTracerThreadBuffer 
                 case SN_TRACER_EVENT_TYPE_FLOW_BEGIN:
                 case SN_TRACER_EVENT_TYPE_FLOW_STEP:
                 case SN_TRACER_EVENT_TYPE_FLOW_END:
-                    if (buffer_size - thread_buffer->ring_buffer.read_offset < sizeof(SnTracerFlowPayload)) {
+                    if (buffer_size - thread_buffer->ring_buffer.read_offset <= sizeof(SnTracerFlowPayload)) {
                         thread_buffer->ring_buffer.read_offset = 0;
                         ptr = ring_buffer + thread_buffer->ring_buffer.read_offset;
                     }
@@ -223,7 +249,7 @@ size_t sn_tracer_process_thread_buffer_n(SnTracer *tracer, SnTracerThreadBuffer 
                     end_ptr = (void *)(payload_ptr.flow + 1);
                     break;
                 case SN_TRACER_EVENT_TYPE_METADATA:
-                    if (buffer_size - thread_buffer->ring_buffer.read_offset < sizeof(SnTracerMetadataPayload)) {
+                    if (buffer_size - thread_buffer->ring_buffer.read_offset <= sizeof(SnTracerMetadataPayload)) {
                         thread_buffer->ring_buffer.read_offset = 0;
                         ptr = ring_buffer + thread_buffer->ring_buffer.read_offset;
                     }
@@ -341,4 +367,3 @@ void sn_tracer_trace_metadata(
 
     sn_tracer_event_commit(tracer, thread_buffer, record);
 }
-

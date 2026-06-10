@@ -401,7 +401,7 @@ SN_TRACER_API void sn_tracer_trace_scope_end(SnTracer *tracer, SnTracerThreadBuf
  * @brief Helper function, use @ref SN_TRACER_TRACE_INSTANT macro.
  */
 SN_TRACER_API void sn_tracer_trace_instant(SnTracer *tracer, SnTracerThreadBuffer *thread_buffer,
-                                    const char *name, const char *func, const char *file, uint32_t line);
+                                     const char *name, const char *func, const char *file, uint32_t line);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_COUNTER macro.
@@ -514,4 +514,3 @@ SN_TRACER_API void sn_tracer_trace_metadata(
     #define SN_TRACER_TRACE_FLOW_END(tracer, thread_buffer, name, id)
     #define SN_TRACER_TRACE_METADATA(tracer, thread_buffer, name, value)
 #endif
-
