@@ -69,7 +69,7 @@ const char *get_event_name(SnTracerEventType type) {
         case SN_TRACER_EVENT_TYPE_METADATA:
             return STRINGIFY(SN_TRACER_EVENT_TYPE_METADATA);
         default:
-            return NULL;
+            return "UNKNOWN";
     }
 }
 

@@ -9,7 +9,7 @@ target_link_libraries(sn_tracer_test PRIVATE sntracer)
 add_executable(example_tracing example_tracing.c)
 target_link_libraries(example_tracing PRIVATE sntracer)
 
-add_executable(multithread example_tracing.c)
+add_executable(multithread multithread.c)
 target_link_libraries(multithread PRIVATE sntracer)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND SN_TRACER_BUILD_SHARED)

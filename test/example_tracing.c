@@ -34,6 +34,8 @@ const char *get_event_name(SnTracerEventType type) {
             return STRINGIFY(SN_TRACER_EVENT_TYPE_FLOW_END);
         case SN_TRACER_EVENT_TYPE_METADATA:
             return STRINGIFY(SN_TRACER_EVENT_TYPE_METADATA);
+        default:
+            return "UNKNOWN";
     }
 }
 

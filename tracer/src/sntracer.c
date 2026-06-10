@@ -42,7 +42,7 @@ SnTracerThreadBuffer *
     SnTracerThreadBuffer *thread_buffer = SN_GET_ALIGNED_PTR(buffer, SnTracerThreadBuffer);
     buffer_size -= (size_t)SN_PTR_DIFF(thread_buffer, buffer);
     size_t rb_size = buffer_size - sizeof(SnTracerThreadBuffer);
-    sn_ring_buffer_init(&thread_buffer->ring_buffer, (char *)(thread_buffer + 1), (uint64_t)rb_size);
+    sn_ring_buffer_allocator_init(&thread_buffer->ring_buffer, (char *)(thread_buffer + 1), (uint64_t)rb_size);
     thread_buffer->dropped = 0;
     thread_buffer->thread_lock = thread_lock;
     thread_buffer->thread_id = sn_tracer_get_thread_id(tracer);
@@ -63,7 +63,7 @@ SnTracerEventRecord
     sn_tracer_lock_thread(tracer, thread_buffer);
 
 #define allocate_from_ring_buffer(type)                                      \
-    (type *)sn_ring_buffer_allocate(&thread_buffer->ring_buffer, sizeof(type), alignof(type))
+    (type *)sn_ring_buffer_allocator_allocate(&thread_buffer->ring_buffer, sizeof(type), alignof(type))
     SnTracerEventRecord record = {0};
     uint64_t saved_write = thread_buffer->ring_buffer.write_offset;
     record.header = allocate_from_ring_buffer(SnTracerEventHeader);
@@ -178,7 +178,7 @@ size_t sn_tracer_process_thread_buffer_n(SnTracer *tracer, SnTracerThreadBuffer 
                 SnTracerMetadataPayload *metadata;
             } payload_ptr;
 
-            void *end_ptr;
+            void *end_ptr = NULL;
 
             sn_tracer_lock_thread(tracer, thread_buffer);
             ptr = ring_buffer + thread_buffer->ring_buffer.read_offset;

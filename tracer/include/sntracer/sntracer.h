@@ -215,7 +215,7 @@ typedef struct SnTracerHooks {
  * The buffer memory must outlive all events written to it.
  */
 typedef struct SnTracerThreadBuffer {
-    SnRingBuffer ring_buffer;
+    SnRingBufferAllocator ring_buffer;
     size_t dropped;
     struct SnTracerThreadBuffer *next;
     void *thread_lock;
@@ -504,13 +504,14 @@ SN_TRACER_API void sn_tracer_trace_metadata(
     #define SN_TRACER_TRACE_METADATA(tracer, thread_buffer, name, value) \
         sn_tracer_trace_metadata(tracer, thread_buffer, name, value)
 #else
-    #define SN_TRACER_TRACER_SCOPE_BEGIN(tracer, thread_buffer, name)
+    #define SN_TRACER_TRACE_SCOPE_BEGIN(tracer, thread_buffer, name)
     #define SN_TRACER_TRACE_SCOPE_END(tracer, thread_buffer)
     #define SN_TRACER_TRACE_SCOPE(tracer, thread_buffer, name)
     #define SN_TRACER_TRACE_INSTANT(tracer, thread_buffer, name)
     #define SN_TRACER_TRACE_COUNTER(tracer, thread_buffer, name, value)
     #define SN_TRACER_TRACE_FLOW_BEGIN(tracer, thread_buffer, name, id)
     #define SN_TRACER_TRACE_FLOW_STEP(tracer, thread_buffer, name, id)
+    #define SN_TRACER_TRACE_FLOW_END(tracer, thread_buffer, name, id)
     #define SN_TRACER_TRACE_METADATA(tracer, thread_buffer, name, value)
 #endif
 
