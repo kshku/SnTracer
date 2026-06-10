@@ -1,6 +1,4 @@
 set(HEADERFILES
-    platform.h
-    defines.h
     sntracer.h
 )
 

@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 3.15...3.31)
 
 project(SnTracer VERSION 0.0.0 DESCRIPTION "A tracing library written in C" LANGUAGES C)
 
+include(FetchContent)
+FetchContent_Declare(sncore
+    GIT_REPOSITORY https://github.com/kshku/SnCore.git
+    GIT_TAG main
+)
+FetchContent_Declare(snmemory
+    GIT_REPOSITORY https://github.com/kshku/SnMemory.git
+    GIT_TAG main
+)
+FetchContent_MakeAvailable(sncore snmemory)
+
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 17)

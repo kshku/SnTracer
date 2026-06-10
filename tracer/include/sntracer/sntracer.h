@@ -1,7 +1,8 @@
 #pragma once
 
+#include <sncore/defines.h>
 #include "sntracer/api.h"
-#include "sntracer/defines.h"
+#include <snmemory/ring_buffer.h>
 
 /**
  * @enum SnTracerEventType
@@ -214,9 +215,7 @@ typedef struct SnTracerHooks {
  * The buffer memory must outlive all events written to it.
  */
 typedef struct SnTracerThreadBuffer {
-    size_t buffer_size;
-    size_t write_offset;
-    size_t read_offset;
+    SnRingBuffer ring_buffer;
     size_t dropped;
     struct SnTracerThreadBuffer *next;
     void *thread_lock;
