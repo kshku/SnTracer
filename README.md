@@ -13,13 +13,13 @@ It **does not**:
 ## Supported Event Types
 | Event Type | Purpose |
 | ---------- | ------- |
-| SCOPE\_BEGIN | Begin a timed scope. |
-| SCOPE\_END | End a timed scope. |
+| SCOPE_BEGIN | Begin a timed scope. |
+| SCOPE_END | End a timed scope. |
 | INSTANT | Point-in-time event. |
 | COUNTER | Numeric value over time. |
-| FLOW\_BEGIN | Start async flow. |
-| FLOW\_STEP | Intermediate async step. |
-| FLOW\_END | End async flow. |
+| FLOW_BEGIN | Start async flow. |
+| FLOW_STEP | Intermediate async step. |
+| FLOW_END | End async flow. |
 | METADATA | Global metadata. |
 
 ## Thread buffers
@@ -27,6 +27,31 @@ SnTracer uses one buffer per thread.
 - Threads itself should register it's buffer.
 - Buffer lifetime should exceed tracer lifetime.
 - Lock are optional (external synchronization assumed)
+
+## Adding to your project
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(sntracer
+    GIT_REPOSITORY https://github.com/kshku/SnTracer.git
+    GIT_TAG main
+)
+FetchContent_MakeAvailable(sntracer)
+
+target_link_libraries(myapp PRIVATE sntracer)
+```
+
+## Building
+
+```sh
+cmake -B build
+cmake --build build
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `SN_TRACER_BUILD_SHARED` | `OFF` | Build as shared library |
+| `SN_TRACER_BUILD_TEST` | `OFF` | Build tests |
 
 ## Usage
 
@@ -75,7 +100,7 @@ SN_TRACER_TRACE_SCOPE_END(tracer, thread_buffer);
 Important rules:
 - Do NOT use return, goto, or break inside the scope
 - If early exit is required, use continue
-- Do NOT call sn\_tracer\_disable() inside a scope
+- Do NOT call sn_tracer_disable() inside a scope
 
 #### Instant Event
 ```c
@@ -100,8 +125,6 @@ Or limited batches:
 ```c
 sn_tracer_process_n(&tracer, 128);
 ```
-
-);
 
 Processing:
 - Reads events in order
@@ -131,7 +154,7 @@ A consumer can emit JSON like:
   "tid": 3
 }
 ```
-And for SCOPE\_END:
+And for SCOPE_END:
 ```json
 {
   "ph": "E",
@@ -143,3 +166,8 @@ And for SCOPE\_END:
 Write to a file, open it in chrome://tracing.
 
 ***Checkout `test/example_tracing.c`***
+
+## Dependencies
+
+- **SnCore** — fetched automatically via FetchContent
+- **SnMemory** — fetched automatically via FetchContent
