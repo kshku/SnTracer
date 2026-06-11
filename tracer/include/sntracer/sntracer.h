@@ -1,7 +1,8 @@
 #pragma once
 
-#include <sncore/defines.h>
 #include "sntracer/api.h"
+
+#include <sncore/defines.h>
 #include <snmemory/ring_buffer.h>
 
 /**
@@ -316,7 +317,8 @@ SN_TRACER_API size_t sn_tracer_process_n(SnTracer *tracer, size_t n);
  *
  * @return Returns number of events processed.
  */
-SN_TRACER_API size_t sn_tracer_process_thread_buffer_n(SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, size_t n);
+SN_TRACER_API size_t sn_tracer_process_thread_buffer_n(
+    SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, size_t n);
 
 /**
  * @brief Processes all available events.
@@ -383,7 +385,8 @@ SN_TRACER_API SnTracerEventRecord sn_tracer_event_begin(
  * @param tracer Tracer instance.
  * @param record The event record.
  */
-SN_TRACER_API void sn_tracer_event_commit(SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, SnTracerEventRecord record);
+SN_TRACER_API void sn_tracer_event_commit(
+    SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, SnTracerEventRecord record);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_SCOPE_BEGIN macro.
@@ -400,8 +403,9 @@ SN_TRACER_API void sn_tracer_trace_scope_end(SnTracer *tracer, SnTracerThreadBuf
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_INSTANT macro.
  */
-SN_TRACER_API void sn_tracer_trace_instant(SnTracer *tracer, SnTracerThreadBuffer *thread_buffer,
-                                     const char *name, const char *func, const char *file, uint32_t line);
+SN_TRACER_API void sn_tracer_trace_instant(
+    SnTracer *tracer, SnTracerThreadBuffer *thread_buffer, const char *name, const char *func,
+    const char *file, uint32_t line);
 
 /**
  * @brief Helper function, use @ref SN_TRACER_TRACE_COUNTER macro.
