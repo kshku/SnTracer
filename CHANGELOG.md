@@ -1,0 +1,14 @@
+# Changelog
+
+## [0.0.0] — 2025-12-19
+
+### Added
+- Event tracing with timestamped records
+- Event types: scope begin/end, instant, counter, flow begin/end/step, metadata
+- User-provided ring buffer for lock-free event storage
+- Per-thread processing with thread-local storage
+- Chrome Trace JSON export for visualization (`chrome://tracing`)
+- Metadata support (process name, thread name, custom key-value pairs)
+- SnCore + SnMemory dependencies (ring buffer allocator)
+- Multi-threaded test suite
+- CI workflows (Linux, macOS, Windows, formatting)
