@@ -5,11 +5,11 @@ project(SnTracer VERSION 0.1.0 DESCRIPTION "A tracing library written in C" LANG
 include(FetchContent)
 FetchContent_Declare(sncore
     GIT_REPOSITORY https://github.com/kshku/SnCore.git
-    GIT_TAG main
+    GIT_TAG v0.1.0
 )
 FetchContent_Declare(snmemory
     GIT_REPOSITORY https://github.com/kshku/SnMemory.git
-    GIT_TAG main
+    GIT_TAG v0.1.0
 )
 FetchContent_MakeAvailable(sncore snmemory)
 
