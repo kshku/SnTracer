@@ -28,14 +28,10 @@
 #define sn_tracer_get_thread_id(tracer) (tracer)->hooks.thread_id((tracer)->hooks.thread_data)
 #define sn_tracer_get_time_now(tracer) (tracer)->hooks.time_now((tracer)->hooks.time_data)
 
-
-
 #define EVENT_VALIDITY_MASK (1 << 15)
 #define SET_EVENT_COMPLETED(header) (header)->type &= ~EVENT_VALIDITY_MASK;
 #define SET_EVENT_INCOMPLETE(header) (header)->type |= EVENT_VALIDITY_MASK;
 #define IS_EVENT_INCOMPLETE(header) ((header)->type & EVENT_VALIDITY_MASK)
-
-
 
 static void *ring_buffer_allocate(SnRingBufferAllocator *alloc, size_t size, size_t align) {
     size += align;
@@ -44,10 +40,8 @@ static void *ring_buffer_allocate(SnRingBufferAllocator *alloc, size_t size, siz
 
     if (free < size) return NULL;
 
-    if ((alloc->write_offset >= alloc->read_offset
-         && alloc->write_offset + size <= alloc->size)
-        || (alloc->write_offset < alloc->read_offset
-            && alloc->write_offset + size < alloc->read_offset)) {
+    if ((alloc->write_offset >= alloc->read_offset && alloc->write_offset + size <= alloc->size)
+        || (alloc->write_offset < alloc->read_offset && alloc->write_offset + size < alloc->read_offset)) {
         void *p = (char *)alloc->buffer + alloc->write_offset;
         void *aligned = (void *)SN_GET_ALIGNED(p, align);
         alloc->write_offset += size - align + SN_PTR_DIFF(aligned, p);
@@ -88,7 +82,7 @@ SnTracerEventRecord
 
     sn_tracer_lock_thread(tracer, thread_buffer);
 
-#define allocate_from_ring_buffer(type)                                      \
+#define allocate_from_ring_buffer(type)                                                    \
     (type *)ring_buffer_allocate(&thread_buffer->ring_buffer, sizeof(type), alignof(type))
     SnTracerEventRecord record = {0};
     uint64_t saved_write = thread_buffer->ring_buffer.write_offset;
