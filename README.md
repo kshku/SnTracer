@@ -34,7 +34,7 @@ SnTracer uses one buffer per thread.
 include(FetchContent)
 FetchContent_Declare(sntracer
     GIT_REPOSITORY https://github.com/kshku/SnTracer.git
-    GIT_TAG main
+    GIT_TAG <tag>  # e.g., v0.1.0
 )
 FetchContent_MakeAvailable(sntracer)
 
