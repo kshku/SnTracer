@@ -46,3 +46,26 @@ jobs:
 
       - name: Build
         run: cmake --build build
+
+  sanitize:
+    name: Sanitize check (ASan+UBSan)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure (sanitizers)
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all" \
+            -DSN_TRACER_BUILD_TEST=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure --timeout 30 -C Debug -V
