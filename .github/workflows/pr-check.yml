@@ -68,4 +68,4 @@ jobs:
         run: cmake --build build
 
       - name: Run tests
-        run: ctest --test-dir build --output-on-failure --timeout 30 -C Debug -V
+        run: ctest --test-dir build/test --output-on-failure --timeout 30 -C Debug -V
