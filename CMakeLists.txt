@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15...3.31)
 
-project(SnTracer VERSION 0.1.0 DESCRIPTION "A tracing library written in C" LANGUAGES C)
+project(SnTracer VERSION 0.2.0 DESCRIPTION "A tracing library written in C" LANGUAGES C)
 
 include(FetchContent)
 FetchContent_Declare(sncore
