@@ -69,3 +69,29 @@ jobs:
 
       - name: Run tests
         run: ctest --test-dir build/test --output-on-failure --timeout 30 -C Debug -V
+
+  shared-build:
+    name: Shared library build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure (shared)
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DSN_TRACER_BUILD_SHARED=ON \
+            -DSN_TRACER_BUILD_TEST=ON
+
+      - name: Build
+        run: cmake --build build
+
+      # Linking the tests against the shared library is what catches a symbol
+      # that is declared without an export macro, the library itself still
+      # builds fine in that case.
+      - name: Run tests
+        run: ctest --test-dir build/test --output-on-failure --timeout 30 -C Debug -V
