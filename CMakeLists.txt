@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15...3.31)
 
-project(SnTracer VERSION 0.2.3 DESCRIPTION "A tracing library written in C" LANGUAGES C)
+project(SnTracer VERSION 0.2.4 DESCRIPTION "A tracing library written in C" LANGUAGES C)
 
 include(FetchContent)
 FetchContent_Declare(sncore
@@ -9,7 +9,7 @@ FetchContent_Declare(sncore
 )
 FetchContent_Declare(snmemory
     GIT_REPOSITORY https://github.com/kshku/SnMemory.git
-    GIT_TAG v0.3.5
+    GIT_TAG v0.3.6
 )
 FetchContent_MakeAvailable(sncore snmemory)
 
