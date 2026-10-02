@@ -28,7 +28,8 @@
 #define sn_tracer_get_thread_id(tracer) (tracer)->hooks.thread_id((tracer)->hooks.thread_data)
 #define sn_tracer_get_time_now(tracer) (tracer)->hooks.time_now((tracer)->hooks.time_data)
 
-#define EVENT_VALIDITY_MASK (1 << 15)
+/* Unsigned so that ~EVENT_VALIDITY_MASK does not go through a negative int */
+#define EVENT_VALIDITY_MASK (1u << 15)
 #define SET_EVENT_COMPLETED(header) (header)->type &= ~EVENT_VALIDITY_MASK;
 #define SET_EVENT_INCOMPLETE(header) (header)->type |= EVENT_VALIDITY_MASK;
 #define IS_EVENT_INCOMPLETE(header) ((header)->type & EVENT_VALIDITY_MASK)

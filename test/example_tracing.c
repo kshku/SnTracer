@@ -45,7 +45,7 @@ uint64_t time_now_hook(void *data) {
     (void)data;
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    return (uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
+    return (uint64_t)ts.tv_sec * 1000000000 + (uint64_t)ts.tv_nsec;
 }
 
 void time_sleep(uint32_t ms) {
@@ -148,7 +148,7 @@ void *producer_thread(void *args) {
     SN_TRACER_TRACE_METADATA(pa->tracer, thread_buffer, "thread_name", "producer");
 
     for (int i = 0; i < 100; ++i) {
-        uint64_t flow_id = ((uint64_t)pthread_self() << 32) | i;
+        uint64_t flow_id = ((uint64_t)pthread_self() << 32) | (uint32_t)i;
 
         SN_TRACER_TRACE_COUNTER(pa->tracer, thread_buffer, "loop counter", i);
 

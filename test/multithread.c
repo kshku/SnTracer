@@ -40,7 +40,7 @@ uint64_t time_now_hook(void *data) {
     (void)data;
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    return (uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
+    return (uint64_t)ts.tv_sec * 1000000000 + (uint64_t)ts.tv_nsec;
 }
 
 void time_sleep(uint32_t ms) {
