@@ -220,7 +220,7 @@ typedef struct SnTracerThreadBuffer {
     size_t dropped;
     struct SnTracerThreadBuffer *next;
     void *thread_lock;
-    int64_t thread_id;
+    uint64_t thread_id;
 } SnTracerThreadBuffer;
 
 /**
@@ -328,7 +328,7 @@ SN_TRACER_API size_t sn_tracer_process_thread_buffer_n(
  * @return Returns number of events processed.
  */
 SN_FORCE_INLINE size_t sn_tracer_process(SnTracer *tracer) {
-    return sn_tracer_process_n(tracer, -1);
+    return sn_tracer_process_n(tracer, SIZE_MAX);
 }
 
 /**
@@ -340,7 +340,7 @@ SN_FORCE_INLINE size_t sn_tracer_process(SnTracer *tracer) {
  * @return Returns number of events processed.
  */
 SN_FORCE_INLINE size_t sn_tracer_process_thread_buffer(SnTracer *tracer, SnTracerThreadBuffer *thread_buffer) {
-    return sn_tracer_process_thread_buffer_n(tracer, thread_buffer, -1);
+    return sn_tracer_process_thread_buffer_n(tracer, thread_buffer, SIZE_MAX);
 }
 
 /**

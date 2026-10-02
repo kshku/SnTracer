@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15...3.31)
 
-project(SnTracer VERSION 0.2.1 DESCRIPTION "A tracing library written in C" LANGUAGES C)
+project(SnTracer VERSION 0.2.2 DESCRIPTION "A tracing library written in C" LANGUAGES C)
 
 include(FetchContent)
 FetchContent_Declare(sncore
@@ -27,6 +27,7 @@ set(gcc_clang_comp "$<COMPILE_LANG_AND_ID:C,Clang,GNU>")
 set(msvc_comp "$<COMPILE_LANG_AND_ID:C,MSVC>")
 
 target_compile_options(sn_tracer_configs INTERFACE "$<${gcc_clang_comp}:-Wall;-Wextra;-Wformat;-Wuninitialized;-Wpedantic>")
+target_compile_options(sn_tracer_configs INTERFACE "$<${gcc_clang_comp}:-Wconversion;-Wsign-conversion>")
 
 target_compile_options(sn_tracer_configs INTERFACE "$<${gcc_clang_comp}:-fvisibility=hidden>")
 
