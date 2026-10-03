@@ -41,7 +41,7 @@ jobs:
         run: |
           cmake -B build \
             -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_C_FLAGS="-Wall -Wextra -Werror" \
+            -DCMAKE_C_FLAGS="-Wall -Wextra -Wconversion -Wsign-conversion -Werror" \
             -DSN_TRACER_BUILD_TEST=ON
 
       - name: Build
